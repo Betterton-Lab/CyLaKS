@@ -251,7 +251,21 @@ double Protein::GetSoloWeight_Bind_II(BindingSite *neighb) {
   if (r < spring_.r_min_ or r > spring_.r_max_) {
     return 0.0;
   }
-  double weight_spring{spring_.GetWeight_Bind(r)};
+  //Calulate theta
+  if (r_y<0) {
+    r_y = - r_y;
+    r_x = - r_x;
+  }
+
+  double theta=0;
+  if (r_x<0) {
+    theta = atan(r_y/-r_x);
+  }
+  else {
+    theta = 3.14159-atan(r_y/r_x);
+  }
+
+  double weight_spring{spring_.GetWeight_Bind(r, theta)};
   double weight_site{neighb->GetWeight_Bind()};
   return weight_spring * weight_site;
 }
@@ -281,23 +295,24 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
     Sys::ErrorExit("Protein::GetWeight_diffuse");
   }
   int dx{dir * head->GetDirectionTowardRest()};
-  bool exactly_vertical{false};
+  //printf(" In get wegiht dx is %i, dir is %i, rest is %i \n",dx, dir,head->GetDirectionTowardRest() );
+  //bool exactly_vertical{false};
   // For xlinks exactly at rest,
-  if (dx == 0) {
-    exactly_vertical = true;
+  //if (dx == 0) {
+  //  exactly_vertical = true;
     // Diffuse from rest in a random direction
-    if (dir == -1) {
-      ran_ = SysRNG::GetRanProb();
-      if (ran_ < 0.5) {
-        dx = 1;
-      } else {
-        dx = -1;
-      }
+  //  if (dir == -1) {
+  //    ran_ = SysRNG::GetRanProb();
+  //    if (ran_ < 0.5) {
+  //      dx = 1;
+  //    } else {
+  //      dx = -1;
+  //    }
       // Impossible to diffuse toward rest
-    } else {
-      return 0.0;
-    }
-  }
+  //  } else {
+  //    return 0.0;
+  //  }
+  //}
   BindingSite *new_loc{head->site_->GetNeighbor(dx)};
   // ! FIXME temporary hacky solution for forced_slide test mode
   if (new_loc == nullptr) {
@@ -325,7 +340,8 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
     double weight_neighb{head->site_->GetWeight_Unbind()};
     // If xlink is exactly vertical, multiply weight by 2 for proper statistics
     // (Each head needs 2 directions sampled -- only 1 sampled when vert)
-    double weight_config{exactly_vertical ? 2.0 : 1.0};
+    double weight_config{1.0};
+    //printf("weight %f",weight_spring * weight_neighb * weight_config);
     return weight_spring * weight_neighb * weight_config;
   }
   if (new_loc->occupant_ != nullptr) {
@@ -344,8 +360,8 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
   double weight_neighb{head->site_->GetWeight_Unbind()};
   // If xlink is exactly vertical, multiply weight by 2 for proper statistics
   // (Each head needs 2 directions sampled -- only 1 sampled when exactly vert)
-  double weight_config{exactly_vertical ? 2.0 : 1.0};
-  // printf("WT[%i] = %g\n", dx, weight_spring * weight_neighb);
+  double weight_config{1.0};
+  //printf("WT[%i] = %g\n", dx, weight_spring * weight_neighb);
   return weight_spring * weight_neighb * weight_config;
 }
 
@@ -371,22 +387,22 @@ double Protein::GetWeight_Unbind_II(BindingHead *head) {
 }
 
 bool Protein::Diffuse(BindingHead *head, int dir) {
-
   int dx{dir * head->GetDirectionTowardRest()};
+  //printf("dx is %i, dir is %i, rest is %i \n",dx, dir,head->GetDirectionTowardRest() );
   // For xlinks exactly at rest,
-  if (dx == 0) {
+  //if (dx == 0) {
     // Diffuse from rest in a random direction
-    if (dir == -1) {
-      if (ran_ < 0.5) {
-        dx = 1;
-      } else {
-        dx = -1;
-      }
+  //  if (dir == -1) {
+  //    if (ran_ < 0.5) {
+  //      dx = 1;
+  //    } else {
+  //      dx = -1;
+  //    }
       // Impossible to diffuse toward rest
-    } else {
-      return false;
-    }
-  }
+  //  } else {
+  //    return false;
+  //  }
+  //}
   BindingSite *old_site = head->site_;
   int i_new{(int)old_site->index_ + dx};
   if (i_new < 0 or i_new > old_site->filament_->sites_.size() - 1) {

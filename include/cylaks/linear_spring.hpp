@@ -16,6 +16,7 @@ protected:
   double k_rot_{0.0};
 
   double dr_{0.0};
+  double dtheta{0.0};
   Vec<double> torque_;
   Vec2D<double> f_vec_; // Vector of force for each endpoint (points to center)
 
@@ -35,8 +36,8 @@ protected:
     // Recall, Weight = exp(0.5 * E / kbT) [assume lambda = 0.5]
     double E_max{std::log(_max_weight) * Params::kbT};
     // E = 0.5 * k * (r - r0)^2
-    r_min_ = r_rest_ - sqrt(2 * E_max / k_slack_);
-    r_max_ = r_rest_ + sqrt(2 * E_max / k_spring_);
+    r_min_ = r_rest_ - 3*sqrt(2 * E_max / k_slack_);
+    r_max_ = r_rest_ + 3*sqrt(2 * E_max / k_spring_);
     // E = 0.5 * k_rot * (theta - theta0)^2
     theta_min_ = theta_rest_ - sqrt(2 * E_max / k_rot_);
     theta_max_ = theta_rest_ + sqrt(2 * E_max / k_rot_);
@@ -87,6 +88,13 @@ public:
     for (int i_dim{0}; i_dim < _n_dims_max; i_dim++) {
       r_hat[i_dim] /= r_mag;
     }
+    Vec2D<double> u{endpoints_[0]->GetBoundObjectOrientation(),
+                    endpoints_[1]->GetBoundObjectOrientation()};
+    Vec<double> theta{M_PI - acos(Dot(r_hat, u[0])), acos(Dot(r_hat, u[1]))};
+    for (int i_endpoint{0}; i_endpoint < 2; i_endpoint++) {
+      dtheta=theta[i_endpoint] - theta_rest_;
+    }
+    double torque_mag = -k_rot_*(dtheta);
     // printf("r_hat: [%g, %g]\n", r_hat[0], r_hat[1]);
     // Get theta
     /*
@@ -122,6 +130,13 @@ public:
        */
       f_vec_[1][i_dim] = -f_vec_[0][i_dim];
     }
+    double force_mag=torque_mag/(r_mag*.5);
+    double force_x=force_mag*sin(theta[0]);
+    double force_y=force_mag*cos(theta[0]);
+    f_vec_[0][0]+=force_x;
+    f_vec_[0][1]+=force_y;
+    f_vec_[1][0] = -f_vec_[0][0];
+    f_vec_[1][1] = -f_vec_[0][1];
     return true;
   }
   void ApplyForces() {
@@ -140,36 +155,54 @@ public:
       return 0.0;
     }
   }
-  double GetWeight_Bind(double r) {
+  double GetWeight_Bind(double r, double theta) {
     if (r < r_min_ or r > r_max_) {
       return 0.0;
     }
     double dr{r - r_rest_};
     double energy{dr > 0.0 ? 0.5 * k_spring_ * Square(dr)
                            : 0.5 * k_slack_ * Square(dr)};
+    double dT{theta-theta_rest_};
+    double energy_rot = .5*k_rot_*Square(dT);
+    energy+=energy_rot;
     return exp(-(1.0 - _lambda_spring) * energy / Params::kbT);
   }
   double GetWeight_Unbind() {
     double energy{dr_ > 0.0 ? 0.5 * k_spring_ * Square(dr_)
                             : 0.5 * k_slack_ * Square(dr_)};
+    double energy_rot = .5*k_rot_*Square(dtheta);
+    energy+=energy_rot;
     return exp(_lambda_spring * energy / Params::kbT);
   }
   double GetWeight_Shift(Object *static_site, Object *old_site,
                          Object *new_site) {
     double energy_old{dr_ > 0.0 ? 0.5 * k_spring_ * Square(dr_)
                                 : 0.5 * k_slack_ * Square(dr_)};
+    double energy_rot_old = .5*k_rot_*Square(dtheta);
+    energy_old+=energy_rot_old;
     double r_x_new{new_site->pos_[0] - static_site->pos_[0]};
     double r_y_new{new_site->pos_[1] - static_site->pos_[1]};
     double r_new{sqrt(Square(r_x_new) + Square(r_y_new))};
-    if (r_new < r_min_ or r_new > r_max_) {
-      return 0.0;
+    if (r_y_new<0) {
+      r_y_new = - r_y_new;
+      r_x_new = - r_x_new;
+    }
+    
+    double theta_new=0;
+    if (r_x_new<0) {
+    theta_new = atan(r_y_new/-r_x_new);
+    }
+    else {
+      theta_new = 3.14159-atan(r_y_new/r_x_new);
     }
     double dr_new{r_new - r_rest_};
+    double dtheta_new{theta_new-theta_rest_};
+    //double dtheta_new{dtheta};
     double energy_new{dr_new > 0.0 ? 0.5 * k_spring_ * Square(dr_new)
                                    : 0.5 * k_slack_ * Square(dr_new)};
+    double energy_rot_new = .5*k_rot_*Square(dtheta_new);
+    energy_new+=energy_rot_new;
     double dE{energy_new - energy_old};
-    // Diffusing towards rest is considered an unbinding-type event in
-    // regards to Boltzmann factors, since both events let the spring relax
     if (dE < 0.0) {
       return exp(_lambda_spring * fabs(dE) / Params::kbT);
     }
@@ -180,5 +213,4 @@ public:
     }
   }
 };
-
 #endif
