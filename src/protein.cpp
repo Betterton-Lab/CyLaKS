@@ -160,38 +160,63 @@ bool Protein::UpdateExtension() {
 }
 
 int Protein::GetDirectionTowardRest(BindingHead *head) {
+  double weight_forward{1};
+  double weight_back{1};
   // ! FIXME for asymmetric sprangs
   if (n_heads_active_ == 1) {
     return 1;
   } else if (n_heads_active_ == 2) {
-    double x_static{head->GetOtherHead()->site_->pos_[0]};
-    double x_fwd{head->site_->pos_[0] + Params::Filaments::site_size};
-    double x_bck{head->site_->pos_[0] - Params::Filaments::site_size};
-    double r_x_fwd{x_fwd - x_static};
-    double r_x_bck{x_bck - x_static};
-    double r_x{head->site_->pos_[0] - x_static};
-    double r_y{head->site_->pos_[1] - head->GetOtherHead()->site_->pos_[1]};
-    double r{sqrt(Square(r_x) + Square(r_y))};
-    double r_fwd{sqrt(Square(r_x_fwd) + Square(r_y))};
-    double r_bck{sqrt(Square(r_x_bck) + Square(r_y))};
-    double dr{r - spring_.r_rest_};
-    double dr_fwd{r_fwd - spring_.r_rest_};
-    double dr_bck{r_bck - spring_.r_rest_};
-    if (Square(dr_fwd) == Square(dr_bck)) {
+    BindingSite *site_forward{head->site_->GetNeighbor(1)};
+    BindingSite *site_back{head->site_->GetNeighbor(-1)};
+    BindingSite *static_site{head->GetOtherHead()->site_};
+    BindingSite *current_site{head->site_};
+    //If trying to diffuse off end use mirror of other head
+    if (site_forward && site_back){
+      //printf("no null \n");
+      weight_forward = spring_.GetWeight_Shift(static_site, current_site, site_forward);
+      weight_back = spring_.GetWeight_Shift(static_site, current_site, site_back); 
+    } 
+    else if (site_forward==NULL){
+      //printf("forward null \n");
+      weight_back = spring_.GetWeight_Shift(static_site, current_site, site_back);
+      BindingHead *other_head{head->GetOtherHead()};
+      site_forward = other_head->site_->GetNeighbor(-1);
+      current_site=other_head->site_;
+      static_site=head->site_;
+      weight_forward = spring_.GetWeight_Shift(static_site, current_site, site_forward);
+    }
+    else if (site_back==NULL){
+      //printf("back null \n");
+      weight_forward = spring_.GetWeight_Shift(static_site, current_site, site_forward);
+      BindingHead *other_head{head->GetOtherHead()};
+      site_back = other_head->site_->GetNeighbor(1);
+      current_site=other_head->site_;
+      static_site=head->site_;
+      weight_back = spring_.GetWeight_Shift(static_site, current_site, site_back);
+    }
+    
+    //double x_static{head->GetOtherHead()->site_->pos_[0]};
+    //double x_fwd{head->site_->pos_[0] + Params::Filaments::site_size};
+    //double x_bck{head->site_->pos_[0] - Params::Filaments::site_size};
+    //double r_x_fwd{x_fwd - x_static};
+    //double r_x_bck{x_bck - x_static};
+    //double r_x{head->site_->pos_[0] - x_static};
+    //double r_y{head->site_->pos_[1] - head->GetOtherHead()->site_->pos_[1]};
+    //double r{sqrt(Square(r_x) + Square(r_y))};
+    //double r_fwd{sqrt(Square(r_x_fwd) + Square(r_y))};
+    //double r_bck{sqrt(Square(r_x_bck) + Square(r_y))};
+    //double dr{r - spring_.r_rest_};
+    //double dr_fwd{r_fwd - spring_.r_rest_};
+    //double dr_bck{r_bck - spring_.r_rest_};
+        if (weight_forward == weight_back) {
       // printf("HUH\n");
       return 0;
     }
-    if (Square(dr_fwd) < Square(dr)) {
-      return 1;
-    }
-    if (Square(dr_bck) < Square(dr)) {
+    if (weight_forward > weight_back) {
       return -1;
     }
-    if (Square(dr_fwd) < Square(dr_bck)) {
+    if (weight_back > weight_forward) {
       return 1;
-    }
-    if (Square(dr_fwd) > Square(dr_bck)) {
-      return -1;
     }
     Sys::ErrorExit("Protein::GetDirectionTowardRest()");
     return 0;
@@ -298,21 +323,17 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
   //printf(" In get wegiht dx is %i, dir is %i, rest is %i \n",dx, dir,head->GetDirectionTowardRest() );
   //bool exactly_vertical{false};
   // For xlinks exactly at rest,
-  //if (dx == 0) {
-  //  exactly_vertical = true;
+  if (dx == 0) {
+    printf("dx == 0 \n");
+    //exactly_vertical = true;
     // Diffuse from rest in a random direction
-  //  if (dir == -1) {
-  //    ran_ = SysRNG::GetRanProb();
-  //    if (ran_ < 0.5) {
-  //      dx = 1;
-  //    } else {
-  //      dx = -1;
-  //    }
-      // Impossible to diffuse toward rest
-  //  } else {
-  //    return 0.0;
-  //  }
-  //}
+    ran_ = SysRNG::GetRanProb();
+    if (ran_ < 0.5) {
+      dx = 1;
+    } else {
+      dx = -1;
+    }
+  }
   BindingSite *new_loc{head->site_->GetNeighbor(dx)};
   // ! FIXME temporary hacky solution for forced_slide test mode
   if (new_loc == nullptr) {
@@ -359,7 +380,7 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
   double weight_spring{spring_.GetWeight_Shift(static_loc, old_loc, new_loc)};
   double weight_neighb{head->site_->GetWeight_Unbind()};
   // If xlink is exactly vertical, multiply weight by 2 for proper statistics
-  // (Each head needs 2 directions sampled -- only 1 sampled when exactly vert)
+  // (Each had needs 2 directions sampled -- only 1 sampled when exactly vert)
   double weight_config{1.0};
   //printf("WT[%i] = %g\n", dx, weight_spring * weight_neighb);
   return weight_spring * weight_neighb * weight_config;
@@ -390,19 +411,16 @@ bool Protein::Diffuse(BindingHead *head, int dir) {
   int dx{dir * head->GetDirectionTowardRest()};
   //printf("dx is %i, dir is %i, rest is %i \n",dx, dir,head->GetDirectionTowardRest() );
   // For xlinks exactly at rest,
-  //if (dx == 0) {
-    // Diffuse from rest in a random direction
-  //  if (dir == -1) {
-  //    if (ran_ < 0.5) {
-  //      dx = 1;
-  //    } else {
-  //      dx = -1;
-  //    }
-      // Impossible to diffuse toward rest
-  //  } else {
-  //    return false;
-  //  }
-  //}
+  if (dx == 0) {
+    printf("dx ==0 \n");
+    // Diffuse from rest in a random direc
+    if (ran_ < 0.5) {
+      dx = 1;
+    } else {
+      dx = -1;
+    }
+
+  }
   BindingSite *old_site = head->site_;
   int i_new{(int)old_site->index_ + dx};
   if (i_new < 0 or i_new > old_site->filament_->sites_.size() - 1) {
