@@ -325,10 +325,7 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
     double weight_spring{spring_.GetWeight_Shift(static_loc, old_loc, new_loc)};
     double weight_neighb{head->site_->GetWeight_Unbind()};
     // If xlink is exactly vertical, multiply weight by 2 for proper statistics
-    // (Each head needs 2 directions sampled -- only 1 sampled when vert)
-    double weight_config{1.0};
-    //printf("weight %f \n",weight_spring * weight_neighb * weight_config);
-    return weight_spring * weight_neighb * weight_config;
+    return weight_spring * weight_neighb;
   }
   if (new_loc->occupant_ != nullptr) {
     return 0.0;
@@ -346,9 +343,8 @@ double Protein::GetWeight_Diffuse(BindingHead *head, int dir) {
   double weight_neighb{head->site_->GetWeight_Unbind()};
   // If xlink is exactly vertical, multiply weight by 2 for proper statistics
   // (Each had needs 2 directions sampled -- only 1 sampled when exactly vert)
-  double weight_config{1.0};
   //printf("WT[%i] = %g\n", dx, weight_spring * weight_neighb);
-  return weight_spring * weight_neighb * weight_config;
+  return weight_spring * weight_neighb;
 }
 
 double Protein::GetWeight_Bind_II() {

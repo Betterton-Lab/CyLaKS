@@ -36,8 +36,8 @@ protected:
     // Recall, Weight = exp(0.5 * E / kbT) [assume lambda = 0.5]
     double E_max{std::log(_max_weight) * Params::kbT};
     // E = 0.5 * k * (r - r0)^2
-    r_min_ = r_rest_ - 3*sqrt(2 * E_max / k_slack_);
-    r_max_ = r_rest_ + 3*sqrt(2 * E_max / k_spring_);
+    r_min_ = r_rest_ - sqrt(2 * E_max / k_slack_);
+    r_max_ = r_rest_ + sqrt(2 * E_max / k_spring_);
     // E = 0.5 * k_rot * (theta - theta0)^2
     theta_min_ = theta_rest_ - sqrt(2 * E_max / k_rot_);
     theta_max_ = theta_rest_ + sqrt(2 * E_max / k_rot_);
@@ -82,7 +82,7 @@ public:
     double r_mag{sqrt(r_sq)};
     if (r_mag < r_min_ or r_mag > r_max_) {
       // printf("r = %g\n", r_mag);
-      // ForceUnbind();
+      ForceUnbind();
       return false;
     }
     for (int i_dim{0}; i_dim < _n_dims_max; i_dim++) {
@@ -95,7 +95,6 @@ public:
       dtheta=theta[i_endpoint] - theta_rest_;
     }
     double torque_mag = -k_rot_*(dtheta);
-
     dr_ = r_mag - r_rest_;
     double f_mag{dr_ > 0.0 ? -k_spring_ * dr_ : -k_slack_ * dr_};
     for (int i_dim{0}; i_dim < _n_dims_max; i_dim++) {

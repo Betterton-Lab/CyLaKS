@@ -1,9 +1,8 @@
 
 clear variables;
-file_dir = '../params';
-fileDirectory = '../params';
+fileDirectory = '/home/shane/projects/CyLaKS/%s';
 sim_name_base = 'test_xlink_bind_ii';
-sim_name_base = 'with_offset';
+sim_name_base = 'test_xlink_diffusion_Boltzmann';
 offsets = [0]; %[0.0, 4.1]; % , 8.2];
 labels = [""]; % ["0.0", "4.1"]; %, "8.2"];
 dist_cutoff = 8;                % no. sites
@@ -32,13 +31,12 @@ for i_offset = 1 : n_offsets
         sim_name = sim_name_base;
     end
     log_file = sprintf(fileDirectory, sprintf('%s.log', sim_name));
-    log_file = '../params/with_offset.log';
     log = textscan(fileread(log_file), '%s %s', 'Delimiter', '=');
     params = log{1, 1};
     values = log{1, 2};
     n_datapoints = str2double(values{contains(params, "n_datapoints ")});
-    name=sprintf(fileDirectory, sprintf('%s_occupancy.file', sim_name))
-    occu_file = fopen('../params/with_offset_occupancy.file');
+    
+    occu_file = fopen(sprintf(fileDirectory, sprintf('%s_occupancy.file', sim_name)));
     raw_occu_data = fread(occu_file, max_length * n_mts * n_datapoints, '*int');
     fclose(occu_file);
     occu_data = reshape(raw_occu_data, max_length, n_mts, n_datapoints);
