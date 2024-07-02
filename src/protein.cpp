@@ -365,6 +365,10 @@ double Protein::GetWeight_Unbind_II(BindingHead *head) {
   }
   double weight_spring{spring_.GetWeight_Unbind()};
   double weight_site{head->site_->GetWeight_Unbind()};
+  if (head->site_ == head->site_->filament_->plus_end_ or
+       head->site_ == head->site_->filament_->minus_end_) {
+    weight_site*=Params::Xlinks::unbind_off_end;
+  }
   return weight_spring * weight_site;
 }
 

@@ -375,6 +375,7 @@ void Curator::ParseParameters() {
     printf("Error; xlinks.p_diffuse_off_end must be between 0 and 1.\n");
     exit(1);
   }
+  ParseYAML(&Xlinks::unbind_off_end, "xlinks.unbind_off_end", "");
 }
 
 void Curator::InitializeSimulation() {
