@@ -95,39 +95,14 @@ public:
       dtheta=theta[i_endpoint] - theta_rest_;
     }
     double torque_mag = -k_rot_*(dtheta);
-    // printf("r_hat: [%g, %g]\n", r_hat[0], r_hat[1]);
-    // Get theta
-    /*
-    Vec2D<double> u{endpoints_[0]->GetBoundObjectOrientation(),
-                    endpoints_[1]->GetBoundObjectOrientation()};
-    Vec<double> theta{M_PI - acos(Dot(r_hat, u[0])), acos(Dot(r_hat, u[1]))};
-    // printf("u = [%g, %g] & [%g, %g]\n", u[0][0], u[0][1], u[1][0], u[1][1]);
-    // printf("theta = %g & %g\n", theta[0], theta[1]);
-    for (int i_endpoint{0}; i_endpoint < 2; i_endpoint++) {
-      if (theta[i_endpoint] < theta_min_ or theta[i_endpoint] > theta_max_) {
-        // printf("THETA = %g\n", theta[i_endpoint]);
-        // ForceUnbind(i_endpoint);
-        // return false;
-      }
-      double dtheta{theta[i_endpoint] - theta_rest_};
-      double frac{dtheta != 0.0 ? dtheta / sin(dtheta) : 0.0};
-      torque_[i_endpoint] = k_rot_ * frac * Cross(r_hat, u[i_endpoint]);
-      // printf("  torque[%i] = %g\n", i_endpoint, torque_[i_endpoint]);
-    }
-    */
+
     dr_ = r_mag - r_rest_;
-    // printf("dr = %g\n", dr_);
     double f_mag{dr_ > 0.0 ? -k_spring_ * dr_ : -k_slack_ * dr_};
     for (int i_dim{0}; i_dim < _n_dims_max; i_dim++) {
       // Radial forces
       f_vec_[0][i_dim] = f_mag * r_hat[i_dim];
-      // Forces from torques
-      /*
-      f_vec_[0][i_dim] += Cross(r_hat, torque_[0])[i_dim] / r_mag;
-      f_vec_[0][i_dim] += Cross(r_hat, torque_[1])[i_dim] / r_mag;
       // printf("  f[0][%i] = %g\n", i_dim, f_vec_[0][i_dim]);
       // Newton's third law; 2nd endpoint gets an equal + opposite force
-       */
       f_vec_[1][i_dim] = -f_vec_[0][i_dim];
     }
     double force_mag=torque_mag/(r_mag*.5);
@@ -163,6 +138,7 @@ public:
     double energy{dr > 0.0 ? 0.5 * k_spring_ * Square(dr)
                            : 0.5 * k_slack_ * Square(dr)};
     double dT{theta-theta_rest_};
+    //printf("r is %f, theta is %f \n", r, theta);
     double energy_rot = .5*k_rot_*Square(dT);
     energy+=energy_rot;
     return exp(-(1.0 - _lambda_spring) * energy / Params::kbT);
@@ -187,17 +163,11 @@ public:
       r_y_new = - r_y_new;
       r_x_new = - r_x_new;
     }
-    
-    double theta_new=0;
-    if (r_x_new<0) {
-    theta_new = atan(r_y_new/-r_x_new);
-    }
-    else {
-      theta_new = 3.14159-atan(r_y_new/r_x_new);
-    }
+    //Negative because zero is towards the left
+    double theta_new = acos(-r_x_new/r_new);
     double dr_new{r_new - r_rest_};
     double dtheta_new{theta_new-theta_rest_};
-    //double dtheta_new{dtheta};
+    //printf("theta_new_ = %f, theta_old = %f, x %f, y %f\n",dtheta_new , dtheta, r_x_new, r_y_new);
     double energy_new{dr_new > 0.0 ? 0.5 * k_spring_ * Square(dr_new)
                                    : 0.5 * k_slack_ * Square(dr_new)};
     double energy_rot_new = .5*k_rot_*Square(dtheta_new);
