@@ -234,8 +234,7 @@ void ProteinManager::SetParameters() {
     // Fluid flow experienced by crosslinkers is in opposite direction
     // (ETA is in units of pN*s/um^2; need to convert all nm to um to be valid)
     // double r_xlink_head{16.0}; // nm
-    double f_drag{-1 * 6 * M_PI * Params::eta * (_r_xlink_head * 0.001) *
-                  (vel * 0.001)};
+    double f_drag{0};
     // Convert force to an energy energy by assuming it does work
     // on the xlink as it "jumps" from site to site
     double dE_drag{f_drag * Params::Filaments::site_size}; // pN*nm

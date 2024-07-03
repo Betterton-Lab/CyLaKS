@@ -175,10 +175,11 @@ void Curator::GenerateLog() {
   sprintf(log_name, "%s.log", Sys::sim_name_.c_str());
   // Check to see if sim files already exist
   if (std::filesystem::exists(log_name)) {
-    printf("Log file with this name already exists!\n");
-    printf("Do you wish to overwrite these data? y/n\n");
+    //printf("Log file with this name already exists!\n");
+    //printf("Do you wish to overwrite these data? y/n\n");
     Str response;
-    bool response_unacceptable{true};
+    response="Y";
+    bool response_unacceptable{false};
     size_t n_responses{0};
     while (response_unacceptable) {
       std::getline(std::cin, response);
