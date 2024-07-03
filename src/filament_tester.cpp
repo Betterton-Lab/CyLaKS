@@ -31,34 +31,26 @@ void FilamentTester::UpdateForces() {
   } else {
     /* FORCE-DEP UNBINDING */
     double f_stall{6.0}; // pN
-    // Add motor force to 'bottom' microtubule
-    size_t n_motors_bot{
-        (size_t)std::round(double(protofilaments_[0].sites_.size()) / 20.0)};
+
+    //Petes model
+    double slide_v = Sys::slide_velocity_;
+    double a = slide_v*1 +10;
+    double b = slide_v*0.24 +38;
+    double c = 7;
     double f_bot{protofilaments_[0].force_[0]};
-    double f_per_mot_bot{f_bot / n_motors_bot};
-    double v_mot_bot{Sys::slide_velocity_ *
-                     (1.0 - std::fabs(f_per_mot_bot / f_stall))};
-    protofilaments_[0].force_[0] += v_mot_bot * protofilaments_[0].gamma_[0];
-    // Add motor force to 'top' microtubule
-    size_t n_motors_top{
-        (size_t)std::round(double(protofilaments_[1].sites_.size()) / 20.0)};
+    double f_per_mot_bot{-f_bot / n_motors_bot};
+    double new_velocityb{a-b*f_per_mot_bot+c*f_per_mot_bot*f_per_mot_bot};
+    if (new_velocityb>Sys::slide_velocity_){
+      new_velocityb=Sys::slide_velocity_;
+    }
+    protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];
+
     double f_top{protofilaments_[1].force_[0]};
-    double f_per_mot_top{f_bot / n_motors_top};
-    double v_mot_top{Sys::slide_velocity_ *
-                     (1.0 - std::fabs(f_per_mot_top / f_stall))};
-    protofilaments_[1].force_[0] -= v_mot_top * protofilaments_[1].gamma_[0];
-    /* END FORCE-DEP UNBINDING*/
-
-    // printf("f_per_mot: %g // %g\n", f_per_mot_bot, f_per_mot_top);
-    // printf("v_exp: %g\n\n", v_mot_top);
-
-    /* OLD PRIMITIVE FORCE (NON) DEPENDENCE BELOW */
-    // protofilaments_[1].force_[0] -= f_required;
-    // f_required = Sys::slide_velocity_ * protofilaments_[0].gamma_[0];
-    // protofilaments_[0].force_[0] += f_required;
-    /* END OLD BOI */
+    double f_per_mot_top{f_top / n_motors_top};
+    double new_velocityt{a-b*f_per_mot_top+c*f_per_mot_top*f_per_mot_top};
+    if (new_velocityt>Sys::slide_velocity_){
+      new_velocityt=Sys::slide_velocity_;
+    }
+    protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
   }
-  // else {
-  //   printf("i_step is %zu\n", Sys::i_step_);
-  // }
 }

@@ -10,6 +10,9 @@ protected:
 
   Vec<double> recorded_force_;
 
+  int n_motors_bot = 20;
+  int n_motors_top = 20;
+
 public:
 protected:
   void UpdateForces();
