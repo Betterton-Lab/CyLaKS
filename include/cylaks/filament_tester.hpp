@@ -10,8 +10,9 @@ protected:
 
   Vec<double> recorded_force_;
 
-  int n_motors_bot = 20;
-  int n_motors_top = 20;
+  int n_motors_bot = 30;
+  int n_motors_top = 30;
+  bool overlap_ended = false;
 
 public:
 protected:
@@ -36,6 +37,9 @@ public:
     var_force = std::sqrt(var_force) / recorded_force_.size();
     Sys::Log("Avg force on mobile MT: %g +/- %g pN\n", avg_force, var_force);
   }
+    bool OverlapEnded(){
+      return overlap_ended;
+    }
   void Initialize(ProteinTester *proteins);
   void UpdateUnoccupied() {
     if (up_to_date_) {

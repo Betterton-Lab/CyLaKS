@@ -160,6 +160,7 @@ bool Protein::UpdateExtension() {
 }
 
 int Protein::GetDirectionTowardRest(BindingHead *head) { 
+  //printf("begining \n");
   double weight_forward{1};
   double weight_back{1};
   // ! FIXME for asymmetric sprangs
@@ -177,21 +178,27 @@ int Protein::GetDirectionTowardRest(BindingHead *head) {
     } 
     //If trying to diffuse off end use mirror of other head to get direction forward
     else if (site_forward==NULL){
-      //printf("forward null \n");
       weight_back = spring_.GetWeight_Shift(static_site, current_site, site_back);
       BindingHead *other_head{head->GetOtherHead()};
       site_forward = other_head->site_->GetNeighbor(-1);
       current_site=other_head->site_;
       static_site=head->site_;
-      weight_forward = spring_.GetWeight_Shift(static_site, current_site, site_forward);
-    }
+      //This means both heads are at ends  
+      if (site_forward==NULL) {
+        return 0;
+      }
+      weight_forward = spring_.GetWeight_Shift(static_site, current_site, site_forward); 
+   }
     else if (site_back==NULL){
-      //printf("back null \n");
       weight_forward = spring_.GetWeight_Shift(static_site, current_site, site_forward);
       BindingHead *other_head{head->GetOtherHead()};
       site_back = other_head->site_->GetNeighbor(1);
       current_site=other_head->site_;
       static_site=head->site_;
+      //This means both heads are at ends  
+      if (site_back==NULL) {
+        return 0;
+      }
       weight_back = spring_.GetWeight_Shift(static_site, current_site, site_back);
     }
     if (weight_forward == weight_back) {

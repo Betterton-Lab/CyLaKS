@@ -77,6 +77,7 @@ inline double r_0;      // Rest length of coiled-coil domain; nm
 inline double k_spring; // Spring constant of CC-domain; pN/nm
 inline double theta_0;  // Rotational rest angle
 inline double k_rot;    // Rotational spring constant;
+inline double k_rot_asym;    // Rotational spring constant asym;
 inline double p_diffuse_off_end;
 inline double unbind_off_end; //Unbind off microtubule ends is this times base unbind factor
 }; // namespace Xlinks

@@ -30,6 +30,7 @@ void FilamentTester::UpdateForces() {
     }
   } else {
     /* FORCE-DEP UNBINDING */
+    //printf("Petets model \n");
     double f_stall{6.0}; // pN
 
     //Petes model
@@ -43,14 +44,28 @@ void FilamentTester::UpdateForces() {
     if (new_velocityb>Sys::slide_velocity_){
       new_velocityb=Sys::slide_velocity_;
     }
+    //if (new_velocityb<0){
+    //  new_velocityb=0;
+    //}
+    //printf("velocity b is %f \n",new_velocityb);
     protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];
-
+    //printf("force is %f \n", protofilaments_[0].force_[0]);
     double f_top{protofilaments_[1].force_[0]};
     double f_per_mot_top{f_top / n_motors_top};
     double new_velocityt{a-b*f_per_mot_top+c*f_per_mot_top*f_per_mot_top};
-    if (new_velocityt>Sys::slide_velocity_){
-      new_velocityt=Sys::slide_velocity_;
+    if (new_velocityt>Sys::slide_velocity2_){
+      new_velocityt=Sys::slide_velocity2_;
+
     }
+    //if (new_velocityt<0){
+    //  new_velocityt=0;
+    //}
     protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
+    //printf("velocity t is %f \n",new_velocityt);
+  }
+  //If the overlap has ended, end simulation
+  double differance = protofilaments_[0].pos_[0]-protofilaments_[1].pos_[0];
+  if (differance>5000) {
+    overlap_ended = true;
   }
 }

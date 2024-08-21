@@ -1,7 +1,9 @@
 #include "cylaks/curator.hpp"
 #include "yaml-cpp/parser.h"
 #include "yaml-cpp/yaml.h"
-
+#include <iostream>
+#include <fstream>
+#include <string>
 void Curator::CheckArgs(int argc, char *argv[]) {
 
   // With no other input arguments, run interactive launcher
@@ -125,7 +127,8 @@ void Curator::CheckArgs(int argc, char *argv[]) {
       if (argc >= 7) {
         Sys::n_xlinks_ = std::stoi(argv[4]);
         Sys::slide_velocity_ = std::stod(argv[5]);
-        int vel_flag{std::stoi(argv[6])};
+        Sys::slide_velocity2_ = std::stod(argv[6]);
+        int vel_flag{std::stoi(argv[7])};
         if (vel_flag == 1) {
           Sys::constant_velocity_ = true;
         } else if (vel_flag == 0) {
@@ -135,12 +138,12 @@ void Curator::CheckArgs(int argc, char *argv[]) {
           exit(1);
         }
       }
-      if (argc == 7) {
+      if (argc == 8) {
         Sys::i_pause_ = std::numeric_limits<int>::max();
         Sys::i_resume_ = std::numeric_limits<int>::max();
-      } else if (argc == 9) {
-        Sys::i_pause_ = std::stod(argv[7]);
-        Sys::i_resume_ = std::stod(argv[8]);
+      } else if (argc == 10) {
+        Sys::i_pause_ = std::stod(argv[8]);
+        Sys::i_resume_ = std::stod(argv[9]);
         Sys::rescale_times_ = true;
       } else {
         printf("Error. Quick-launch syntax for 'filament_forced_slide' test "
@@ -371,6 +374,7 @@ void Curator::ParseParameters() {
   ParseYAML(&Xlinks::k_spring, "xlinks.k_spring", "pN/nm");
   ParseYAML(&Xlinks::theta_0, "xlinks.theta_0", "degrees");
   ParseYAML(&Xlinks::k_rot, "xlinks.k_rot", "pN*nm/rad");
+  ParseYAML(&Xlinks::k_rot_asym, "xlinks.k_rot_asym", "pN*nm/rad");
   ParseYAML(&Xlinks::p_diffuse_off_end, "xlinks.p_diffuse_off_end", "");
   if (Xlinks::p_diffuse_off_end < 0.0 or Xlinks::p_diffuse_off_end > 1) {
     printf("Error; xlinks.p_diffuse_off_end must be between 0 and 1.\n");
@@ -548,8 +552,21 @@ void Curator::CheckPrintProgress() {
           double(n_steps_so_far) / n_steps_run_ * 100, i_step_, i_step_ * dt);
     }
   }
-  // Terminate simulation once a sufficient number of steps has been taken
-  if (i_step_ >= n_steps_run_ + n_steps_equil_) {
+  //Check if microtubules are still overlapping for forced filament slide
+  bool overlap_ended = test_filaments_.OverlapEnded();
+  //printf("Overlap ended %i\n", overlap_ended);
+  if (overlap_ended == true) {
+     int final_frame = int(i_step_ / n_steps_per_snapshot_);
+     std::string filename  = "_steps.txt";
+     filename = Sys::sim_name_.c_str() + filename;
+     std::ofstream outFile(filename);
+     outFile << final_frame << std::endl;
+     outFile.close();
+     printf("Simulation ended at data frame %d\n", final_frame);
+  }
+
+  // Terminate simulation once a sufficient number of steps has been taken  
+  if (i_step_ >= n_steps_run_ + n_steps_equil_ || overlap_ended == true) {
     running_ = false;
     long clock_ticks{(SysClock::now() - start_time_).count()};
     size_t ticks_per_second{SysClock::period::den};

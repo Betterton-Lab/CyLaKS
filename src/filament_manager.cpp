@@ -122,10 +122,10 @@ void FilamentManager::UpdateForces() {
     pf.torque_ = 0.0;
   }
   if (Params::Filaments::wca_potential_enabled) {
-    double r{protofilaments_[1].pos_[1] - protofilaments_[0].pos_[1]};
+    double r{protofilaments_[1].pos_[1] - protofilaments_[0].pos_[1]+25};
     if (r < threshold_) {
       double f_mag{
-          48 * epsilon_ *
+          5*48 * epsilon_ *
           (Pow(sigma_, 12) / Pow(r, 13) - 0.5 * Pow(sigma_, 6) / Pow(r, 7))};
       protofilaments_[1].force_[1] += f_mag;
       protofilaments_[0].force_[1] -= f_mag;

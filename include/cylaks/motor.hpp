@@ -31,7 +31,7 @@ public:
     // ! FIXME -- how to use endpoints for tether?
     // ! FIXME -- create Anchor obj. that dynamically updates
     tether_.Initialize(sid, id, &head_one_, &head_two_, Motors::k_slack,
-                       Motors::r_0, Motors::k_tether, 0.0, 0.0);
+                       Motors::r_0, Motors::k_tether, 0.0, 0.0, 0.0);
     size_t x_max{(size_t)std::ceil(tether_.r_max_ / Filaments::site_size)};
     neighbors_tether_.resize(Filaments::count * (2 * x_max + 1));
     neighbors_bind_i_teth_.resize(Filaments::count * (2 * x_max + 1));

@@ -14,6 +14,7 @@ protected:
   double k_slack_{0.0};  // For when r < r_0; pN/nm
   double k_spring_{0.0}; // For when r > r_0; pN/nm
   double k_rot_{0.0};
+  double k_rot_asym_{0.0};
 
   double dr_{0.0};
   double dtheta{0.0};
@@ -34,7 +35,7 @@ public:
 protected:
   void SetCutoffs() {
     // Recall, Weight = exp(0.5 * E / kbT) [assume lambda = 0.5]
-    double E_max{std::log(_max_weight) * Params::kbT};
+    double E_max{30*std::log(_max_weight) * Params::kbT};
     // E = 0.5 * k * (r - r0)^2
     r_min_ = r_rest_ - sqrt(2 * E_max / k_slack_);
     r_max_ = r_rest_ + sqrt(2 * E_max / k_spring_);
@@ -56,7 +57,7 @@ public:
   LinearSpring() {}
   void Initialize(size_t sid, size_t id, Object *point_one, Object *point_two,
                   double k_slack, double r_0, double k_spring, double theta_0,
-                  double k_rot) {
+                  double k_rot, double k_rot_asym) {
     Object::Initialize(sid, id);
     endpoints_.push_back(point_one);
     endpoints_.push_back(point_two);
@@ -65,6 +66,7 @@ public:
     k_spring_ = k_spring;
     theta_rest_ = theta_0 * (M_PI / 180.0); // convert to rad
     k_rot_ = k_rot;
+    k_rot_asym_ = k_rot_asym;
     SetCutoffs();
     torque_.push_back(0.0);
     torque_.push_back(0.0);
@@ -81,7 +83,7 @@ public:
     }
     double r_mag{sqrt(r_sq)};
     if (r_mag < r_min_ or r_mag > r_max_) {
-      // printf("r = %g\n", r_mag);
+      printf("Forced unbind with radius of r = %g\n", r_mag);
       ForceUnbind();
       return false;
     }
@@ -94,7 +96,12 @@ public:
     for (int i_endpoint{0}; i_endpoint < 2; i_endpoint++) {
       dtheta=theta[i_endpoint] - theta_rest_;
     }
-    double torque_mag = -k_rot_*(dtheta);
+    double torque_mag = 0;
+    if (dtheta <0){
+      torque_mag = -k_rot_*(dtheta);
+    } else {
+      torque_mag = -k_rot_asym_*(dtheta);
+    }
     dr_ = r_mag - r_rest_;
     double f_mag{dr_ > 0.0 ? -k_spring_ * dr_ : -k_slack_ * dr_};
     for (int i_dim{0}; i_dim < _n_dims_max; i_dim++) {
@@ -138,14 +145,26 @@ public:
                            : 0.5 * k_slack_ * Square(dr)};
     double dT{theta-theta_rest_};
     //printf("r is %f, theta is %f \n", r, theta);
-    double energy_rot = .5*k_rot_*Square(dT);
+    double energy_rot =0;
+    if (dT<0){
+      energy_rot = .5*k_rot_*Square(dT);
+    } else {
+      energy_rot = .5*k_rot_asym_*Square(dT);
+    }
     energy+=energy_rot;
     return exp(-(1.0 - _lambda_spring) * energy / Params::kbT);
   }
   double GetWeight_Unbind() {
     double energy{dr_ > 0.0 ? 0.5 * k_spring_ * Square(dr_)
                             : 0.5 * k_slack_ * Square(dr_)};
-    double energy_rot = .5*k_rot_*Square(dtheta);
+
+    double energy_rot = 0;
+    if (dtheta<0){
+      energy_rot = .5*k_rot_*Square(dtheta);
+    } else {
+      energy_rot = .5*k_rot_asym_*Square(dtheta);
+    }
+
     energy+=energy_rot;
     return exp(_lambda_spring * energy / Params::kbT);
   }
@@ -153,7 +172,12 @@ public:
                          Object *new_site) {
     double energy_old{dr_ > 0.0 ? 0.5 * k_spring_ * Square(dr_)
                                 : 0.5 * k_slack_ * Square(dr_)};
-    double energy_rot_old = .5*k_rot_*Square(dtheta);
+    double energy_rot_old = 0;
+    if (dtheta<0){
+      energy_rot_old = .5*k_rot_*Square(dtheta);
+    } else {
+      energy_rot_old = .5*k_rot_asym_*Square(dtheta);
+    }
     energy_old+=energy_rot_old;
     double r_x_new{new_site->pos_[0] - static_site->pos_[0]};
     double r_y_new{new_site->pos_[1] - static_site->pos_[1]};
@@ -169,7 +193,12 @@ public:
     //printf("theta_new_ = %f, theta_old = %f, x %f, y %f\n",dtheta_new , dtheta, r_x_new, r_y_new);
     double energy_new{dr_new > 0.0 ? 0.5 * k_spring_ * Square(dr_new)
                                    : 0.5 * k_slack_ * Square(dr_new)};
-    double energy_rot_new = .5*k_rot_*Square(dtheta_new);
+    double energy_rot_new = 0;
+    if (dtheta_new<0) {
+      energy_rot_new = .5*k_rot_*Square(dtheta_new);
+    } else{
+      energy_rot_new = .5*k_rot_asym_*Square(dtheta_new);
+    }
     energy_new+=energy_rot_new;
     double dE{energy_new - energy_old};
     if (dE < 0.0) {

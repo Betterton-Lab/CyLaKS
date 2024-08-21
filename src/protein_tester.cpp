@@ -297,6 +297,30 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
     printf("\nError! Please keep velocity below 1 um/s (1000 nm/s).\n");
     exit(1);
   }
+
+  if (Sys::slide_velocity2_ == -1.0) {
+    Str response;
+    printf("Input 0 for constant force or 1 for constant velocity mode.\n");
+    std::getline(std::cin, response);
+    int vel_flag{std::stoi(response)};
+    if (vel_flag == 1) {
+      Sys::constant_velocity_ = true;
+    } else if (vel_flag == 0) {
+      Sys::constant_velocity_ = false;
+    } else {
+      printf("Error. Flag must be 0 or 1.\n");
+      exit(1);
+    }
+    printf("Enter constant (or average) sliding velocity (in nm/s) desired for "
+           "top MT.\n");
+    std::getline(std::cin, response);
+    Sys::slide_velocity2_ = (double)std::stod(response);
+  }
+  if (Sys::slide_velocity2_ >= 1000) {
+    printf("\nError! Please keep velocity below 1 um/s (1000 nm/s).\n");
+    exit(1);
+  }
+
   /*
   // Check if binding/unbinding of crosslinkers should be enabled
   if (Sys::binding_active_ == -1) {
@@ -372,14 +396,28 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
     i_mt_long = 1;
   }
   for (int i_xlink{0}; i_xlink < n_xlinks; i_xlink++) {
-    Protein *xlink{xlinks_.GetFreeEntry()};
-    int i_site{site_indices[i_xlink]};
+    int i_site = site_indices[i_xlink];
+   
+    Protein *xlink{xlinks_.GetFreeEntry()};   
+    if (i_xlink<0) {
+      i_site=i_xlink+1;
+    } else if (i_xlink<0) {
+       i_site=625+9-i_xlink;
+     } 
+ 
+    //printf("i_site is %i\n", i_site);
     BindingSite *site_one{
         &filaments_->protofilaments_[i_mt_short].sites_[i_site]};
-    // printf("site one: %zu\n", site_one->index_);
+     while (site_one->IsOccupied()) {
+        i_site=SysRNG::GetRanInt(filaments_->protofilaments_[i_mt_short].sites_.size());
+        //printf("the new site is %i", i_site);
+        site_one = &filaments_->protofilaments_[i_mt_short].sites_[i_site];
+    } 
+   //printf("site one: %zu\n", site_one->index_);
     BindingSite *site_two{
         filaments_->protofilaments_[i_mt_long].GetNeighb(site_one, 0)};
-    // printf("site two: %zu\n", site_two->index_);
+     //printf("site two: %zu\n", site_two->index_);
+    
     bool exe_one{xlink->Bind(site_one, &xlink->head_one_)};
     bool exe_two{xlink->Bind(site_two, &xlink->head_two_)};
     if (exe_one and exe_two) {

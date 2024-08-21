@@ -47,7 +47,7 @@ public:
     head_two_.Initialize(sid, id, _r_xlink_head, this, &head_one_);
     spring_.Initialize(sid, id, &head_one_, &head_two_, Xlinks::k_spring,
                        Xlinks::r_0, Xlinks::k_spring, Xlinks::theta_0,
-                       Xlinks::k_rot);
+                       Xlinks::k_rot, Xlinks::k_rot_asym);
     // Maximum possible x_distance of spring will occur when r_y = 0
     size_t x_max{(size_t)std::ceil(spring_.r_max_ / Filaments::site_size)};
     neighbors_bind_ii_.resize(2 * x_max + 1);
