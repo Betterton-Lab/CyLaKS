@@ -36,7 +36,7 @@ void Protofilament::SetParameters() {
     Sys::ErrorExit("Index of microtubule does not have a slide velocity attributed to it.");
   }
 
-  double Dif_cont = 1400 * (max_vel/790)*0.1; //nm^2/sec
+  double Dif_cont = 0; //1400 * (max_vel/790)*0.01; //nm^2/sec
   printf("maximum vel is %f, Dif is %f", max_vel, Dif_cont);
   gamma_[0] = 4.1/Dif_cont;
   gamma_[1] = 2 * gamma_[0];

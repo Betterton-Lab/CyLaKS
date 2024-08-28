@@ -44,6 +44,9 @@ void FilamentTester::UpdateForces() {
     if (new_velocityb>Sys::slide_velocity_){
       new_velocityb=Sys::slide_velocity_;
     }
+    if (new_velocityb<0){
+      new_velocityb=0;
+    }
     //if (new_velocityb<0){
     //  new_velocityb=0;
     //}
@@ -56,6 +59,9 @@ void FilamentTester::UpdateForces() {
     if (new_velocityt>Sys::slide_velocity2_){
       new_velocityt=Sys::slide_velocity2_;
 
+    }
+    if (new_velocityt<0){
+      new_velocityt=0;
     }
     //if (new_velocityt<0){
     //  new_velocityt=0;

@@ -398,11 +398,12 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
   for (int i_xlink{0}; i_xlink < n_xlinks; i_xlink++) {
     int i_site = site_indices[i_xlink];
    
-    Protein *xlink{xlinks_.GetFreeEntry()};   
-    if (i_xlink<0) {
+    Protein *xlink{xlinks_.GetFreeEntry()};
+    int edge_crosslinks = 0;
+    if (i_xlink<edge_crosslinks) {
       i_site=i_xlink+1;
-    } else if (i_xlink<0) {
-       i_site=625+9-i_xlink;
+    } else if (i_xlink<edge_crosslinks*2) {
+       i_site=625+edge_crosslinks-1-i_xlink;
      } 
  
     //printf("i_site is %i\n", i_site);
