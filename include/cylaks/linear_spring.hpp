@@ -111,7 +111,7 @@ public:
       // Newton's third law; 2nd endpoint gets an equal + opposite force
       f_vec_[1][i_dim] = -f_vec_[0][i_dim];
     }
-    double force_mag=torque_mag/(r_mag*.5);
+    double force_mag=torque_mag/(r_mag*1);
     double force_x=force_mag*sin(theta[0]);
     double force_y=force_mag*cos(theta[0]);
     f_vec_[0][0]+=force_x;

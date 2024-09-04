@@ -1,7 +1,10 @@
 #ifndef _CYLAKS_FILAMENT_TESTER_HPP_
 #define _CYLAKS_FILAMENT_TESTER_HPP_
 #include "filament_manager.hpp"
-
+#include <iostream>
+#include <fstream>  // Include the fstream library
+#include <vector> 
+ 
 class ProteinTester;
 
 class FilamentTester : public FilamentManager {
@@ -9,7 +12,7 @@ protected:
   ProteinTester *proteins_{nullptr};
 
   Vec<double> recorded_force_;
-
+  //AddDataFile("microtubule_force");
   int n_motors_bot = 30;
   int n_motors_top = 30;
   bool overlap_ended = false;
@@ -24,18 +27,18 @@ public:
     if (Sys::test_mode_.empty()) {
       return;
     }
-    double avg_force{0.0};
-    for (int i_step{0}; i_step < recorded_force_.size(); i_step++) {
-      avg_force += recorded_force_[i_step];
-    }
-    avg_force = avg_force / recorded_force_.size();
-    double var_force{0.0};
-    for (int i_step{0}; i_step < recorded_force_.size(); i_step++) {
-      double var{recorded_force_[i_step] - avg_force};
-      var_force += var * var;
-    }
-    var_force = std::sqrt(var_force) / recorded_force_.size();
-    Sys::Log("Avg force on mobile MT: %g +/- %g pN\n", avg_force, var_force);
+    //double avg_force{0.0};
+    //for (int i_step{0}; i_step < recorded_force_.size(); i_step++) {
+    //  avg_force += recorded_force_[i_step];
+    //}
+    //avg_force = avg_force / recorded_force_.size();
+    //double var_force{0.0};
+    //for (int i_step{0}; i_step < recorded_force_.size(); i_step++) {
+    //  double var{recorded_force_[i_step] - avg_force};
+    //  var_force += var * var;
+    //}
+    //var_force = std::sqrt(var_force) / recorded_force_.size();
+    //Sys::Log("Avg force on mobile MT: %g +/- %g pN\n", avg_force, var_force);
   }
     bool OverlapEnded(){
       return overlap_ended;

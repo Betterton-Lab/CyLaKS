@@ -124,11 +124,13 @@ void Curator::CheckArgs(int argc, char *argv[]) {
       }
     } else if (Sys::test_mode_ == "filament_forced_slide") {
       bool valid_syntax{true};
-      if (argc >= 7) {
+      printf("args is %i",argc);
+      if (argc == 9) {
         Sys::n_xlinks_ = std::stoi(argv[4]);
-        Sys::slide_velocity_ = std::stod(argv[5]);
-        Sys::slide_velocity2_ = std::stod(argv[6]);
-        int vel_flag{std::stoi(argv[7])};
+        Sys::edge_crosslinkers_ = std::stoi(argv[5]);
+        Sys::slide_velocity_ = std::stod(argv[6]);
+        Sys::slide_velocity2_ = std::stod(argv[7]);
+        int vel_flag{std::stoi(argv[8])};
         if (vel_flag == 1) {
           Sys::constant_velocity_ = true;
         } else if (vel_flag == 0) {
@@ -138,14 +140,15 @@ void Curator::CheckArgs(int argc, char *argv[]) {
           exit(1);
         }
       }
-      if (argc == 8) {
-        Sys::i_pause_ = std::numeric_limits<int>::max();
-        Sys::i_resume_ = std::numeric_limits<int>::max();
-      } else if (argc == 10) {
-        Sys::i_pause_ = std::stod(argv[8]);
-        Sys::i_resume_ = std::stod(argv[9]);
-        Sys::rescale_times_ = true;
-      } else {
+      //if (argc == 8) {
+      //  Sys::i_pause_ = std::numeric_limits<int>::max();
+      //  Sys::i_resume_ = std::numeric_limits<int>::max();
+      //} else if (argc == 10) {
+      //  Sys::i_pause_ = std::stod(argv[8]);
+      //  Sys::i_resume_ = std::stod(argv[9]);
+      //  Sys::rescale_times_ = true;
+      //} 
+        else {
         printf("Error. Quick-launch syntax for 'filament_forced_slide' test "
                "mode is:\n");
         printf("\n  %s params.yaml sim_name filament_forced_slide "
@@ -290,6 +293,7 @@ void Curator::ParseParameters() {
   ParseYAML(&t_snapshot, "t_snapshot", "s");
   ParseYAML(&dynamic_equil_window, "dynamic_equil_window", "s");
   ParseYAML(&verbosity, "verbosity", "");
+  ParseYAML(&reduced_outputs, "reduced_outputs", "");
   Log(" Filament parameters:\n");
   ParseYAML(&Filaments::count, "filaments.count", "filaments");
   ParseYAML(&Filaments::n_subfilaments, "filaments.n_subfilaments",
@@ -460,6 +464,8 @@ void Curator::GenerateDataFiles() {
       // ! FIXME rename this; confusing with general term
       AddDataFile("partner_index");
     }
+    AddDataFile("location_x");
+    AddDataFile("angles");
   }
   if (motors_active) {
     // bool; simply says if motor head is trailing or not
@@ -562,6 +568,7 @@ void Curator::CheckPrintProgress() {
      std::ofstream outFile(filename);
      outFile << final_frame << std::endl;
      outFile.close();
+     printf("overlap neded");
      printf("Simulation ended at data frame %d\n", final_frame);
   }
 
@@ -616,9 +623,17 @@ void Curator::OutputData() {
     if (!motors_active and !xlinks_active) {
       continue;
     }
+
+    std::vector<double> location_x;
+    std::vector<double> angles;
+    int num_xlinks=0;
+
+
+
     int occupancy[n_sites_max_];
     int protein_id[n_sites_max_];
     int partner_index[n_sites_max_];
+    
     bool motor_trailing[n_sites_max_];
     double tether_anchor_pos[n_sites_max_];
     for (int i_site{0}; i_site < n_sites_max_; i_site++) {
@@ -629,6 +644,7 @@ void Curator::OutputData() {
       tether_anchor_pos[i_site] = -1.0;
     }
     for (auto const &site : pf->sites_) {
+
       if (site.occupant_ == nullptr) {
         continue;
       }
@@ -636,9 +652,21 @@ void Curator::OutputData() {
       occupancy[site.index_] = species_id;
       protein_id[site.index_] = site.occupant_->GetID();
       if (species_id == _id_xlink) {
+        num_xlinks+=1;
         if (site.occupant_->parent_->n_heads_active_ == 2) {
           partner_index[site.index_] =
               site.occupant_->GetOtherHead()->site_->index_;
+          double location = (site.occupant_->pos_[0] + site.occupant_->GetOtherHead()->pos_[0]);
+          location_x.push_back(location); 
+          std::vector<double> orientation = site.occupant_ -> GetSpringOrientation();
+          if (orientation[1]>0) {
+             orientation[0] = -orientation[0];
+             orientation[1] = -orientation[1];
+          }
+          double angle = atan(orientation[0]/-orientation[1]);
+          //printf("orientation is %f, %f, angle is %f \n", orientation[0], orientation[1], angle);
+          angles.push_back(angle);
+          //double orientation = tan();
           // Sum up all xlink forces on bottom microtubule
           if (i_pf == 0) {
             for (int i_dim{0}; i_dim < _n_dims_max; i_dim++) {
@@ -646,7 +674,13 @@ void Curator::OutputData() {
                   force_vec[i_dim] + site.occupant_->GetForceApplied(i_dim);
             }
           }
-        }
+        } else {
+            //Add entry for singly boudn crosslinkers 
+            //Using -10 as null since angles can be 0 or -1
+            double location = (site.occupant_->pos_[0]);
+            location_x.push_back(location);  
+            angles.push_back(-10);
+          }    
       } else if (species_id == _id_motor) {
         motor_trailing[site.index_] = site.occupant_->Trailing();
         if (site.occupant_->parent_->IsTethered()) {
@@ -658,10 +692,20 @@ void Curator::OutputData() {
         }
       }
     }
-    data_files_.at("occupancy").Write(occupancy, n_sites_max_);
-    data_files_.at("protein_id").Write(protein_id, n_sites_max_);
-    if (xlinks_crosslinking) {
-      data_files_.at("partner_index").Write(partner_index, n_sites_max_);
+    double* loc_arr = new double[location_x.size()];
+    std::copy(location_x.begin(), location_x.end(), loc_arr);
+
+    data_files_.at("location_x").Write(loc_arr, num_xlinks);
+    double* ang_arr = new double[angles.size()];
+    std::copy(angles.begin(), angles.end(), ang_arr);
+
+    data_files_.at("angles").Write(ang_arr, num_xlinks);
+    if (Sys::reduced_outputs_ == false) {
+      data_files_.at("occupancy").Write(occupancy, n_sites_max_);
+      data_files_.at("protein_id").Write(protein_id, n_sites_max_);
+      if (xlinks_crosslinking) {
+        data_files_.at("partner_index").Write(partner_index, n_sites_max_);
+      }
     }
     if (!motors_active) {
       continue;

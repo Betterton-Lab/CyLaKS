@@ -17,6 +17,7 @@ inline int teth_x_max_; // temporary trash variable
 
 inline FILE *log_file_;      // Pointer to log fle
 inline size_t verbosity_{0}; // How much info is output to log; higher is more
+inline bool reduced_outputs_{false}; // Reduce data files outputed
 
 inline bool running_{true};       // If main kmc-bd loop is running
 inline bool equilibrating_{true}; // If proteins are still equilibrating
@@ -43,7 +44,7 @@ inline int binding_active_{-1}; // bool+1; -1 for null; 0 for false; 1 for true
 inline bool constant_velocity_{true};
 inline double slide_velocity_{-1.0}; // For 'forced_slide'
 inline double slide_velocity2_{-1.0}; // For 'forced_slide'
-
+inline int edge_crosslinkers_{0};
 inline int i_pause_{-1};             // when to pause force clamp
 inline int i_resume_{-1};            // when to resume force clamp
 inline bool rescale_times_{false};

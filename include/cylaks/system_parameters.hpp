@@ -13,6 +13,7 @@ inline double t_equil;    // Minimum time to equilibrate; s
 inline double t_snapshot; // Time between each data output; s
 inline double dynamic_equil_window; // Set to <=0 to disable dynamic equil; s
 inline size_t verbosity;            // Verbosity level; 0 (quiet) to 3 (max)
+inline bool reduced_outputs; //Stop simulations from outputing occupancy, partner indicies, and protein_ids
 namespace Filaments {
 inline size_t count;          // Number of filaments in simulation
 inline size_t n_subfilaments; // For multiple protofilaments in a MT

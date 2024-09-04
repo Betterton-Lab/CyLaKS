@@ -18,7 +18,7 @@ void FilamentTester::UpdateForces() {
   }
   // Add necessary force to get desired sliding velocity
   // (only applies to x dimension, so i = 0 index)
-  double f_required{Sys::slide_velocity_ * protofilaments_[1].gamma_[0]};
+    double f_required{Sys::slide_velocity_ * protofilaments_[1].gamma_[0]};
   if (Sys::constant_velocity_) {
     double f_applied{f_required - protofilaments_[1].force_[0]};
     if (Sys::i_step_ < Sys::i_pause_ or Sys::i_step_ >= Sys::i_resume_) {
@@ -26,6 +26,7 @@ void FilamentTester::UpdateForces() {
       // Record applied force
       if (recorded_force_[Sys::i_step_] == 0) {
         recorded_force_[Sys::i_step_] = -f_applied;
+        printf("Force added here\n");
       }
     }
   } else {
@@ -40,13 +41,19 @@ void FilamentTester::UpdateForces() {
     double c = 7;
     double f_bot{protofilaments_[0].force_[0]};
     double f_per_mot_bot{-f_bot / n_motors_bot};
+    //printf("Force = %f \n", f_bot);
+    if (recorded_force_[Sys::i_step_] == 0) {
+      recorded_force_[Sys::i_step_] = f_bot;
+      //printf("Force added here\n");
+    }
     double new_velocityb{a-b*f_per_mot_bot+c*f_per_mot_bot*f_per_mot_bot};
+    //printf("new velocity is %f \n", new_velocityb);
     if (new_velocityb>Sys::slide_velocity_){
       new_velocityb=Sys::slide_velocity_;
-    }
-    if (new_velocityb<0){
-      new_velocityb=0;
-    }
+    } 
+    //if (new_velocityb<0){
+    //  new_velocityb=0;
+    //}
     //if (new_velocityb<0){
     //  new_velocityb=0;
     //}
@@ -60,9 +67,9 @@ void FilamentTester::UpdateForces() {
       new_velocityt=Sys::slide_velocity2_;
 
     }
-    if (new_velocityt<0){
-      new_velocityt=0;
-    }
+    //if (new_velocityt<0){
+    //  new_velocityt=0;
+    //}
     //if (new_velocityt<0){
     //  new_velocityt=0;
     //}
@@ -70,8 +77,15 @@ void FilamentTester::UpdateForces() {
     //printf("velocity t is %f \n",new_velocityt);
   }
   //If the overlap has ended, end simulation
+  //printf("i step is %i", Sys::i_step_);
   double differance = protofilaments_[0].pos_[0]-protofilaments_[1].pos_[0];
   if (differance>5000) {
     overlap_ended = true;
+    //std::ofstream outFile("force_no_dif.file");
+    //for (float number : recorded_force_) {
+    //    outFile << number << std::endl;
+    //}
+    //outFile.close();
+    //data_files_.at("microtubule_force").Write(recorded_force_, 1);
   }
 }

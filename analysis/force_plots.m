@@ -1,14 +1,23 @@
 clear variables;
 
-sim_name = 'testino';
+sim_name = 'Test_extreme_wca_2'; %'Difp1_N30_sym3_eps3_asym50_off500_dif04_10uM_2';
 start_time = 0;          % in seconds 
 end_time = -1;           % in seconds; -1 defaults to full data 
 smoothing_window  = 1;   % in seconds
-
+didnt_end=0;
 % Load parameter structure
-file_dir = '..';  % Default; only change if you move CyLaKS output files
+file_dir = '../runs';  % Default; only change if you move CyLaKS output files
 params = load_parameters(sprintf('%s/%s', file_dir, sim_name));
-
+        data_steps_file=fopen(sprintf('%s/%s_%s', file_dir, sim_name,"steps.txt"), 'r');
+    if data_steps_file == -1
+        %error('File could not be opened. Check the file path and permissions.');
+        didnt_end=didnt_end+1;
+    else
+       number_of_steps = fgetl(data_steps_file);
+       %end_frame=str2num(line);
+       %params.n_datapoints=str2num(number_of_steps);
+       params.n_datapoints=floor(str2num(number_of_steps) / 100) * 100;
+    end
 % Open data files
 xlink_filename = sprintf('%s/%s_xlink_force.file', file_dir, sim_name);
 xlink_data = zeros(params.n_dims, params.n_datapoints);

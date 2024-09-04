@@ -258,6 +258,7 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
          "temporary pause in the applied force at a specified time.\n\n");
   // Get number of crosslinkers to initialize in the starting overlap
   int n_xlinks{Sys::n_xlinks_};
+  int edge_crosslinkers{Sys::edge_crosslinkers_};
   if (n_xlinks == -1) {
     Str response;
     printf("Top microtubule is %zu sites in length.\n", Filaments::n_sites[1]);
@@ -265,6 +266,10 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
     std::getline(std::cin, response);
     n_xlinks = (int)std::stoi(response);
     Sys::n_xlinks_ = n_xlinks;
+    std::getline(std::cin, response);
+    edge_crosslinkers = (int)std::stoi(response);    
+    Sys::edge_crosslinkers_ = edge_crosslinkers;
+//printf("%i \n",edge_crosslinkers);
   }
   int n_places{(int)Filaments::n_sites[1]};
   if (n_places > (int)Filaments::n_sites[0]) {
@@ -303,19 +308,22 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
     printf("Input 0 for constant force or 1 for constant velocity mode.\n");
     std::getline(std::cin, response);
     int vel_flag{std::stoi(response)};
-    if (vel_flag == 1) {
-      Sys::constant_velocity_ = true;
-    } else if (vel_flag == 0) {
-      Sys::constant_velocity_ = false;
-    } else {
-      printf("Error. Flag must be 0 or 1.\n");
-      exit(1);
-    }
+    //if (vel_flag == 1) {
+    //  Sys::constant_velocity_ = true;
+    //} else if (vel_flag == 0) {
+    //  Sys::constant_velocity_ = false;
+    //} else {
+    //  printf("Error. Flag must be 0 or 1.\n");
+    //  exit(1);
+    //}
     printf("Enter constant (or average) sliding velocity (in nm/s) desired for "
            "top MT.\n");
     std::getline(std::cin, response);
     Sys::slide_velocity2_ = (double)std::stod(response);
-  }
+    
+ }
+ printf("flag %i, vel1%f, vel2 %f \n",Sys::constant_velocity_,Sys::slide_velocity_, Sys::slide_velocity2_); 
+  
   if (Sys::slide_velocity2_ >= 1000) {
     printf("\nError! Please keep velocity below 1 um/s (1000 nm/s).\n");
     exit(1);
@@ -338,6 +346,7 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
   }
   */
   // Check if a pause in force-clamping is desired
+  /*
   if (Sys::i_pause_ == -1) {
     Str response;
     printf("Enable pause in force clamp?\n");
@@ -369,6 +378,7 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
       exit(1);
     }
   }
+  */
   // Rescale pause/resume variables if initialized via quick-launcher
   if (Sys::rescale_times_) {
     double t_pause{(double)Sys::i_pause_};
@@ -399,7 +409,8 @@ void ProteinTester::InitializeTest_Filament_ForcedSlide() {
     int i_site = site_indices[i_xlink];
    
     Protein *xlink{xlinks_.GetFreeEntry()};
-    int edge_crosslinks = 0;
+
+    int edge_crosslinks = edge_crosslinkers;
     if (i_xlink<edge_crosslinks) {
       i_site=i_xlink+1;
     } else if (i_xlink<edge_crosslinks*2) {
