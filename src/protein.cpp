@@ -429,6 +429,9 @@ double Protein::GetWeight_Unbind_II(BindingHead *head) {
 }
 
 bool Protein::Diffuse(BindingHead *head, int dir) {
+  //if (Sys::i_step_> 100000){
+  //  return false;
+  //}
   int dx{dir * head->GetDirectionTowardRest()};
   //printf("dx is %i, dir is %i, rest is %i \n",dx, dir,head->GetDirectionTowardRest() );
   // For xlinks exactly at rest,
@@ -488,7 +491,9 @@ bool Protein::Diffuse_Side(BindingHead *head, int dir) {
 }
 
 bool Protein::Bind(BindingSite *site, BindingHead *head) {
-
+  //if (Sys::i_step_> 100000){
+  //  return false;
+  //}
   if (site == nullptr) {
     return false;
   }
@@ -502,7 +507,9 @@ bool Protein::Bind(BindingSite *site, BindingHead *head) {
 }
 
 bool Protein::Unbind(BindingHead *head) {
-
+  //if (Sys::i_step_> 100000){
+  //  return false;
+  //}
   BindingSite *site{head->site_};
   site->occupant_ = nullptr;
   head->site_ = nullptr;

@@ -50,22 +50,36 @@ void FilamentTester::UpdateForces() {
     //printf("new velocity is %f \n", new_velocityb);
     if (new_velocityb>Sys::slide_velocity_){
       new_velocityb=Sys::slide_velocity_;
+      protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];  
     } 
-    //if (new_velocityb<0){
-    //  new_velocityb=0;
-    //}
+    else if (new_velocityb>0){
+      protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];
+    } else {
+      //protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];
+
+      protofilaments_[0].force_[0] = -(f_per_mot_bot-3.9)*30;
+      //printf("velocity is %f \n",(f_per_mot_bot-3.9)*30/protofilaments_[0].gamma_[0]);
+    }
     //if (new_velocityb<0){
     //  new_velocityb=0;
     //}
     //printf("velocity b is %f \n",new_velocityb);
-    protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];
+    //protofilaments_[0].force_[0] = new_velocityb*protofilaments_[0].gamma_[0];
+    //protofilaments_[0].force_[0] += 120;
     //printf("force is %f \n", protofilaments_[0].force_[0]);
     double f_top{protofilaments_[1].force_[0]};
     double f_per_mot_top{f_top / n_motors_top};
     double new_velocityt{a-b*f_per_mot_top+c*f_per_mot_top*f_per_mot_top};
-    if (new_velocityt>Sys::slide_velocity2_){
+     if (new_velocityt>Sys::slide_velocity2_){
       new_velocityt=Sys::slide_velocity2_;
+      protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
+    }
+    else if (new_velocityt>0){
+      protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
+    } else {
+      //protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
 
+      protofilaments_[1].force_[0] = (f_per_mot_top-3.9)*30;
     }
     //if (new_velocityt<0){
     //  new_velocityt=0;
@@ -73,7 +87,8 @@ void FilamentTester::UpdateForces() {
     //if (new_velocityt<0){
     //  new_velocityt=0;
     //}
-    protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
+    //protofilaments_[1].force_[0] += -120; 
+    //protofilaments_[1].force_[0] = -new_velocityt*protofilaments_[1].gamma_[0];
     //printf("velocity t is %f \n",new_velocityt);
   }
   //If the overlap has ended, end simulation

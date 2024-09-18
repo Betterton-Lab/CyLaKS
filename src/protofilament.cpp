@@ -36,7 +36,7 @@ void Protofilament::SetParameters() {
     Sys::ErrorExit("Index of microtubule does not have a slide velocity attributed to it.");
   }
 
-  double Dif_cont = 1400 * (max_vel/790)*0.1; //nm^2/sec
+  double Dif_cont = 1400 * (max_vel/790); //nm^2/sec
   printf("maximum vel is %f, Dif is %f", max_vel, Dif_cont);
   gamma_[0] = 4.1/Dif_cont;
   gamma_[1] = 2 * gamma_[0];
@@ -44,8 +44,10 @@ void Protofilament::SetParameters() {
   for (int i_dim{0}; i_dim < sigma_.size(); i_dim++) {
     sigma_[i_dim] = sqrt(2 * kbT * dt_eff_ / gamma_[i_dim]); // nm or rad
   }
-  gamma_[0] = 0.004;
-  gamma_[1] = 2 * gamma_[0];
+  //printf("gamma is %f", gamma_[0]);
+  //gamma_[0] = 0.004;
+  //gamma_[1] = 0.000008; //2 * gamma_[0];
+  //gamma_[0] = 0.004;
 }
 
 void Protofilament::GenerateSites() {
@@ -110,7 +112,7 @@ void Protofilament::UpdateRodPosition() {
       // if (i_dim == 0 and vel != 50) {
       //   printf("v[%i] = %g\n", i_dim, vel);
       // }
-      //printf("force = %g\n", force_[0]);
+      //printf("force = %g, velocity = %f\n", force_[0], vel);
       pos_[i_dim] += vel * dt_eff_;
       pos_[i_dim] += rod_basis[0][i_dim] * noise_par;
       pos_[i_dim] += rod_basis[1][i_dim] * noise_perp;

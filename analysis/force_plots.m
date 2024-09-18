@@ -1,6 +1,6 @@
 clear variables;
 
-sim_name = 'Test_extreme_wca_2'; %'Difp1_N30_sym3_eps3_asym50_off500_dif04_10uM_2';
+sim_name= 'test10'; %'Difp1_N30_sym3_eps3_asym50_off500_dif04_10uM_2';
 start_time = 0;          % in seconds 
 end_time = -1;           % in seconds; -1 defaults to full data 
 smoothing_window  = 1;   % in seconds
@@ -9,7 +9,7 @@ didnt_end=0;
 file_dir = '../runs';  % Default; only change if you move CyLaKS output files
 params = load_parameters(sprintf('%s/%s', file_dir, sim_name));
         data_steps_file=fopen(sprintf('%s/%s_%s', file_dir, sim_name,"steps.txt"), 'r');
-    if data_steps_file == -1
+    if data_steps_file == -1 %data_steps_file
         %error('File could not be opened. Check the file path and permissions.');
         didnt_end=didnt_end+1;
     else
@@ -52,3 +52,9 @@ xlabel('Time (s)');
 grid off
 legend({'Horizontal component', 'Vertical component'}, 'location', 'best', 'FontSize', 12);
 legend('boxoff');
+hold off
+xlink_data=xlink_data/30;
+histogram(xlink_data(1, 250000:500000),'NumBins', 200);
+xlim([-10 3]);
+xlabel('Total PRC1 force (pN)');
+ylabel('Counts');
