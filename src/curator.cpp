@@ -466,6 +466,7 @@ void Curator::GenerateDataFiles() {
     }
     AddDataFile("location_x");
     AddDataFile("angles");
+    AddDataFile("cl_num");
   }
   if (motors_active) {
     // bool; simply says if motor head is trailing or not
@@ -626,7 +627,8 @@ void Curator::OutputData() {
 
     std::vector<double> location_x;
     std::vector<double> angles;
-    int num_xlinks=0;
+    int num_xlinks = 0;
+    std::vector<int> cl_num;
 
 
 
@@ -656,7 +658,7 @@ void Curator::OutputData() {
         if (site.occupant_->parent_->n_heads_active_ == 2) {
           partner_index[site.index_] =
               site.occupant_->GetOtherHead()->site_->index_;
-          double location = (site.occupant_->pos_[0] + site.occupant_->GetOtherHead()->pos_[0]);
+          double location = (site.occupant_->pos_[0] + site.occupant_->GetOtherHead()->pos_[0])/2;
           location_x.push_back(location); 
           std::vector<double> orientation = site.occupant_ -> GetSpringOrientation();
           if (orientation[1]>0) {
@@ -694,11 +696,14 @@ void Curator::OutputData() {
     }
     double* loc_arr = new double[location_x.size()];
     std::copy(location_x.begin(), location_x.end(), loc_arr);
-
+    //printf("Number of xlinks is %i \n", num_xlinks);
     data_files_.at("location_x").Write(loc_arr, num_xlinks);
     double* ang_arr = new double[angles.size()];
     std::copy(angles.begin(), angles.end(), ang_arr);
-
+    cl_num.push_back(num_xlinks);
+    //printf("Number of xlinks is %i \n", cl_num.data()[0]);
+    //printf("first location is %f \n", loc_arr[0]);
+     data_files_.at("cl_num").Write(cl_num.data(), 1);
     data_files_.at("angles").Write(ang_arr, num_xlinks);
     if (Sys::reduced_outputs_ == false) {
       data_files_.at("occupancy").Write(occupancy, n_sites_max_);
