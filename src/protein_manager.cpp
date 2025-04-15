@@ -79,15 +79,17 @@ void ProteinManager::InitializeWeights() {
   xlinks_.AddWeight("neighbs", _n_neighbs_max + 1);
   double dE{0.0};
   double lambda_neighb = Params::Xlinks::neighb_binding_lambda;
+  
   for (int n_neighbs{0}; n_neighbs <= _n_neighbs_max; n_neighbs++) {
     dE = -1 * Params::Motors::neighb_neighb_energy * n_neighbs;
-    // ! FIXME generalize w/o use of Sys namespace
+   // ! FIXME generalize w/o use of Sys namespace
     motors_.weights_[name].bind_[n_neighbs] = exp(-(1.0 - lambda_neighb) * dE);
     motors_.weights_[name].unbind_[n_neighbs] = exp(lambda_neighb * dE);
     Sys::weight_neighb_bind_[n_neighbs] = exp(-(1.0 - lambda_neighb) * dE);
     Sys::weight_neighb_unbind_[n_neighbs] = exp(lambda_neighb * dE);
     // ! FIXME generalize w/o use of Sys namespace
     dE = -1 * Params::Xlinks::neighb_neighb_energy * n_neighbs;
+
     xlinks_.weights_[name].bind_[n_neighbs] = exp(-(1.0 - lambda_neighb) * dE);
     xlinks_.weights_[name].unbind_[n_neighbs] = exp(lambda_neighb * dE);
   }
@@ -191,9 +193,10 @@ void ProteinManager::SetParameters() {
     Vec3D<double> p_bind{{Vec<double>(2 * _n_neighbs_max + 1, p_bind_i)}};
     Vec3D<double> p_unbind{{Vec<double>(2 * _n_neighbs_max + 1, p_unbind_i)}};
     double lambda_neighb = Params::Xlinks::neighb_binding_lambda;
+    
     for (int n_neighbs{0}; n_neighbs <= 2 * _n_neighbs_max; n_neighbs++) {
       double dE{-1 * Params::Xlinks::neighb_neighb_energy * n_neighbs};
-      // printf("dE = %g\n", dE);
+      
       p_bind[0][0][n_neighbs] *= exp(-(1.0 - lambda_neighb) * dE);
       p_unbind[0][0][n_neighbs] *= exp(lambda_neighb * dE);
     }

@@ -359,6 +359,8 @@ void Curator::ParseParameters() {
             "kBT");
   ParseYAML(&Xlinks::allow_crossing, "xlinks.allow_crossing",
             "");
+  ParseYAML(&Xlinks::neighb_binding_lambda, "xlinks.neighb_binding_lambda",
+            "");
   ParseYAML(&Xlinks::t_active, "xlinks.t_active", "s");
   ParseYAML(&Xlinks::k_on, "xlinks.k_on", "1/nM*s");
   ParseYAML(&Xlinks::c_bulk, "xlinks.c_bulk", "nM");
