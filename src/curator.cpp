@@ -357,6 +357,8 @@ void Curator::ParseParameters() {
   Sys::Log("  Crosslinker (xlink) parameters:\n");
   ParseYAML(&Xlinks::neighb_neighb_energy, "xlinks.neighb_neighb_energy",
             "kBT");
+  ParseYAML(&Xlinks::allow_crossing, "xlinks.allow_crossing",
+            "");
   ParseYAML(&Xlinks::t_active, "xlinks.t_active", "s");
   ParseYAML(&Xlinks::k_on, "xlinks.k_on", "1/nM*s");
   ParseYAML(&Xlinks::c_bulk, "xlinks.c_bulk", "nM");

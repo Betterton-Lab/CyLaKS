@@ -5,7 +5,7 @@ sim_name = 'test10x175';
 sim_name = 'shepherding_baseline/shep_1nM_200nM_8_1.5kT';
 sim_name = 'endtags_3/endtag_0.0524_25_1nM_200nM_8_1.375kT_500_1';
 sim_name = 'out_coop8/prc1_coop_37.0nM_8_1.15kT_1.3x_0';
-
+sim_name = 'run_name_1';
 output_movie_name = 'test';
 
 start_frame = 1;
@@ -15,7 +15,7 @@ frames_per_plot = 100;
 movie_duration = 30; % in seconds
 
 % Load parameter structure
-file_dir = '..';  % Default; only change if you move CyLaKS output files
+file_dir = '../params';  % Default; only change if you move CyLaKS output files
 params = load_parameters(sprintf('%s/%s', file_dir, sim_name));
 
 % Set plotting helper variables

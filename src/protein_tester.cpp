@@ -1359,6 +1359,8 @@ void ProteinTester::InitializeTest_Motor_LatticeBind() {
   Sys::OverrideParam("xlinks: c_bulk", &Xlinks::c_bulk, 0.0);
   Sys::OverrideParam("xlinks: neighb_neighb_energy",
                      &Xlinks::neighb_neighb_energy, 0.0);
+  Sys::OverrideParam("xlinks: allow_crossing",
+                     &Xlinks::neighb_neighb_energy, false);
   Sys::OverrideParam("filaments: COUNT", &Filaments::count, 1);
   Sys::OverrideParam("filaments: N_SITES[0]", &Filaments::n_sites[0],
                      2 * cutoff + 1);

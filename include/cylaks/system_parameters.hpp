@@ -78,6 +78,8 @@ inline double k_spring; // Spring constant of CC-domain; pN/nm
 inline double theta_0;  // Rotational rest angle
 inline double k_rot;    // Rotational spring constant;
 inline double p_diffuse_off_end;
+inline bool allow_crossing; //Allow crosslinkers to overlap while crosslinking
+inline double neighb_binding_lambda; //1=neighb_neighb_energy only effects unbinding, 0=neighb_neighb_energy only effects binding
 }; // namespace Xlinks
 }; // namespace Params
 

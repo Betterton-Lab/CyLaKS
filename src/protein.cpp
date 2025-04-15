@@ -230,14 +230,68 @@ void Protein::UpdateNeighbors_Bind_II() {
   Protofilament *neighb_fil{site->filament_->neighbor_};
   double r_y{site->filament_->pos_[1] - neighb_fil->pos_[1]};
   double r_x_max{sqrt(Square(spring_.r_max_) - Square(r_y))};
+  bool allow_crossing{Params::Xlinks::allow_crossing};
   int delta_max{(int)std::ceil(r_x_max / Params::Filaments::site_size)};
   for (int delta{-delta_max}; delta <= delta_max; delta++) {
     BindingSite *neighb{neighb_fil->GetNeighb(site, delta)};
     if (neighb == nullptr) {
       continue;
     }
-    if (neighb->occupant_ == nullptr) {
+    if (neighb->occupant_ == nullptr and allow_crossing == true) {
       neighbors_bind_ii_[n_neighbors_bind_ii_++] = neighb;
+      continue;
+    } else{
+      bool cross{false};
+      double lowx1 = 0;
+      double highx1 = 0;
+      double lowx2 = 0;
+      double highx2 = 0;
+      //Check for cross
+      for (int delta2{-delta_max}; delta2 <= delta_max; delta2++) {
+        if (cross==true){
+          break;
+        }
+      BindingSite *neighb2{neighb_fil->GetNeighb(site, delta2)};
+      if (neighb2 == nullptr) {
+        continue;
+      }
+      if (neighb2->occupant_!=nullptr){
+        Protein* xlink{neighb2->occupant_->parent_};
+        int state{xlink->GetNumHeadsActive()};
+        if (state == 2){
+          BindingSite *site{GetActiveHead()->site_};
+          Vec<double>& cl1head1 = site->pos_;
+          Vec<double>& cl1head2 = neighb->pos_;
+          if (cl1head1[1]>cl1head2[1]){
+            lowx1=floor(cl1head2[0]);
+            highx1=floor(cl1head1[0]);
+          } else {
+            lowx1=floor(cl1head1[0]);
+            highx1=floor(cl1head2[0]);
+          }
+          Vec<double>& cl2head1= xlink->GetHeadOne()->pos_;
+          Vec<double>& cl2head2 = xlink->GetHeadTwo()->pos_;
+          Vec<double>& cl2low=cl2head1;
+          Vec<double>& cl2up=cl2head2;
+          if (cl2head1[1]>cl2head2[1]){
+            lowx2=floor(cl2head2[0]);
+            highx2=floor(cl2head1[0]);
+          } else {
+            lowx2=floor(cl2head1[0]);
+            highx2=floor(cl2head2[0]);
+          }
+
+          if((lowx1>lowx2 && highx1<highx2) || (lowx1<lowx2 && highx1>highx2)){
+            cross=true;
+            //printf("*** ruled out neighbot %i ***\n\n", neighb->index_);
+
+          }
+        }
+      }
+    }
+      if (neighb->occupant_ == nullptr && cross == false) {
+        neighbors_bind_ii_[n_neighbors_bind_ii_++] = neighb;
+      }
     }
   }
 }
