@@ -7,14 +7,15 @@ sim_name = 'shep_50x_0.02_0.5kT_0.131_0.131_0.1nM_10nM';
 sim_name = 'outputProto/shep_1nM_100nM_1_1000_0.4kT_0.1x_0.3x_0';
 sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
 %sim_name = 'out_final_newCombos/shep_0.75nM_30nM_8_1000_0.6kT_3x_5x_0';
-sim_name_base = 'final_motility_0.1nM_1x';
+sim_name = 'out_final_motorVelWeighted/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_30x_30x'
+%sim_name_base = 'final_motility_0.1nM_1x';
 
 output_movie_name = 'test';
 
 start_frame = 1; %250;
-end_frame = 3000;  % set to -1 to run until end of data
+end_frame = -1;  % set to -1 to run until end of data
 
-frames_per_plot = 10; 
+frames_per_plot = 100; 
 movie_duration = 60; % in seconds
 
 % Load parameter structure
@@ -78,6 +79,7 @@ for i_data = start_frame : frames_per_plot : end_frame
     % Set Axes properties
     ax = axes('Units', 'normalized', 'Position', [0.075 0.085 0.9 0.9]);
     hold all;
+    set(gca,'xdir','reverse');%,'ydir','reverse')
     min_x = min(min(filament_pos(1, :, :, i_data)));
     max_x = max(max(filament_pos(1, :, :, i_data)));
     min_y = min(min(filament_pos(2, :, :, i_data)));
@@ -199,7 +201,6 @@ for i_data = start_frame : frames_per_plot : end_frame
             end 
         end
         % Draw tethers
-        
         line_vec = [minus_pos(1) - plus_pos(1), minus_pos(2) - plus_pos(2)];
         teth_coords = teth_data(:, i_mt, i_data);
         for i_teth=1:1:params.max_sites - 1
@@ -260,7 +261,6 @@ for i_data = start_frame : frames_per_plot : end_frame
     annotation('textbox', dim, 'String', str, 'FitBoxToText', 'on');
     drawnow();
     %  frame = getframe(gcf); %(fig1); %, frame_box);
-    set(gca,'xdir','reverse');%,'ydir','reverse')
     writeVideo(v, getframe(gcf));
 end
 
