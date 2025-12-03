@@ -1,0 +1,31 @@
+bootstrap: docker
+from: ubuntu:focal
+
+%post
+export DEBIAN_FRONTEND=noninteractive 
+apt-get -qq update 
+apt-get install -qqy --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        vim \
+        cmake \
+        wget \
+        git \
+        curl \
+        htop \
+        pkg-config \
+        doxygen \
+        libgsl-dev \
+        libyaml-cpp-dev
+rm -rf ~/.cache
+
+mkdir /build
+cd /build
+
+git clone --recursive --single-branch --branch multiPF https://github.com/Betterton-Lab/CyLaKS.git
+cd CyLaKS
+./install.sh -I
+rm -rf /build
+
+%environment
+export DEBIAN_FRONTEND=noninteractive 
