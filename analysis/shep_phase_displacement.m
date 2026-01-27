@@ -4,20 +4,19 @@ clear variables;
 site_SID = 0;
 xlink_SID = 1;
 motor_SID = 2;
-endtag_boundary = 0; %500; %125;
+endtag_boundary = 125; 
 flux_win_size = 500;
-vel_limit_upper = 10000;
+vel_limit_upper = 3000;
 vel_limit_lower = 0;
 
-xlink_analysis_only = false;
-
+xlink_analysis_only = true;
 
 seeds = [0];
 %{
 name = 'motorLife';
 sim_name_base = 'shep_0.1nM_%gnM_8_1000_0.6kT_3x_5x_0_motor_%gx';
 file_dir = '../out_final_motorLifetime';
-output_folder = 'plots_motorLifetime_0_noVelLimit';
+output_folder = 'plots_motorLifetime_125velOnly_noVelLimit';
 var1 = [10, 30, 100];
 var1Label = 'Motor concentration (nM)';
 var2 = [0.1, 0.3, 1, 3, 10];
@@ -29,7 +28,7 @@ name = 'motorVel';
 sim_name_base = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_%gx_%gx';
 file_dir = '../out_final_motorVelWeighted2';
 %file_dir = '../out_final_motorMotility';
-output_folder = 'plots_motorVelocityWeighted2_0_noVelLimit';
+output_folder = 'plots_motorVelocityWeighted2_125velOnly_noVelLimit';
 %output_folder = 'plots_motorMotility';
 var1 = [0.1, 0.3, 1, 3, 10]; %, 30];
 var1Label = 'Relative hydrolysis rate';
@@ -42,18 +41,18 @@ var2Label = 'Relative motor lifetime';
 name = 'xlinkLife';
 sim_name_base = 'shep_%gnM_100nM_8_1000_0.6kT_3x_5x_0_xlink_%gx';
 file_dir = '../out_final_xlinkLifetime';
-output_folder = 'yerp'; %'plots_xlinkLifetime_0_noVelLimit';
+output_folder = 'plots_xlinkLifetime_125velOnly_noVelLimit';
 var1 = [0.01, 0.03, 0.1, 0.3, 1];
 var1Label = 'Crosslinker concentration (nM)';
 var2 = [0.1, 0.3, 1, 3, 10];
 var2Label = 'Relative crosslinker lifetime';
 %}
-%{
+
 name = 'xlinkDiffNorm';%'xlinkDiff';
 %sim_name_base = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_xlinkDiffNorm_%gx_%gx';
 sim_name_base = 'shep_0.1nM_10nM_8_1000_0.6kT_0_xlinkDiffNorm_%gx_%gx';
 file_dir = '../out_final_xlinkDiffusionNorm';
-output_folder = 'plots_xlinkDiffusionNorm_0_noVelLimit';
+output_folder = 'plots_xlinkDiffusionNorm_125velOnly_noVelLimit';
 var1 = [0.0, 0.03, 0.1, 0.3, 1, 3, 10, 30];
 %var1 = [0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30];
 var1Label = 'Relative lateral diffusion';
@@ -61,11 +60,11 @@ var2 = [0.03, 0.1, 0.3, 1, 3, 10, 30];
 var2Label = 'Relative longitudinal diffusion';
 %}
 
-
+%{
 name = 'protoNum';
 sim_name_base = 'shep_0.1nM_50nM_%i_5000_%.1fkT_3x_5x_0';
 file_dir = '../out_final_protoNum_5x';
-output_folder = 'plots_protoNumber_5x_50nM_0_noVelLimit';
+output_folder = 'plots_protoNumber_5x_50nM_125velOnly_noVelLimit';
 var1 = [1];
 var1Label = "";
 var2 = [1, 2, 3, 5, 8];
@@ -104,13 +103,13 @@ for i_var = 1 : length(var1)
         %sim_name = sprintf(sim_name_base, var1(i_var), var2(j_var)) %, seeds(i_seed));
         %sim_name = sprintf(sim_name_base, n_pfs(j_var), var1(i_var), var2(j_var)) %, seeds(i_seed));
         % for xlink diffusion
-         % if i_var == 1
-         %     sim_name = sprintf("shep_0.1nM_10nM_8_1000_0.6kT_0_xlinkDiffNorm_%gx_0.0x", var2(j_var))
-         % else
-         %     sim_name = sprintf(sim_name_base, var2(j_var), var1(i_var)) %, seeds(i_seed));
-         % end
-        % for protoNumer
-        sim_name = sprintf(sim_name_base, var2(j_var), energies(j_var))
+         if i_var == 1
+             sim_name = sprintf("shep_0.1nM_10nM_8_1000_0.6kT_0_xlinkDiffNorm_%gx_0.0x", var2(j_var))
+         else
+             sim_name = sprintf(sim_name_base, var2(j_var), var1(i_var)) %, seeds(i_seed));
+         end
+         %for protoNumer
+        %sim_name = sprintf(sim_name_base, var2(j_var), energies(j_var))
         try
             params = load_parameters(sprintf('%s/%s', file_dir, sim_name));
             catch_triggered = false;
@@ -134,6 +133,7 @@ for i_var = 1 : length(var1)
         lifetimes = zeros([2 100 * n_seeds  * params.n_mts * params.max_sites]);
         velocities = zeros([2 100 * n_seeds  * params.n_mts * params.max_sites]);
         n_runs = zeros([2 1]);
+        n_runs_vel = zeros([2 1]);
 
         midpoint = params.max_sites/2.0;
         for i_seed = 1:n_seeds
@@ -295,11 +295,14 @@ for i_var = 1 : length(var1)
                                 run_time = delta_time * params.time_per_datapoint;
                                 velocity = (run_length / run_time) * 1000; % convert to nm/s
                                 % If time bound is above time cutoff, add to data
-                                if end_site(1) > endtag_boundary && run_time >= params.time_per_datapoint && abs(velocity) > vel_limit_lower && abs(velocity) < vel_limit_upper
+                                if run_time >= params.time_per_datapoint && abs(velocity) > vel_limit_lower && abs(velocity) < vel_limit_upper
                                     n_runs(i_species) = n_runs(i_species) + 1;
                                     runlengths(i_species, n_runs(i_species)) = run_length;
                                     lifetimes(i_species, n_runs(i_species)) = run_time;
-                                    velocities(i_species, n_runs(i_species)) = velocity;
+                                    if end_site(1) > endtag_boundary
+                                        n_runs_vel(i_species) = n_runs_vel(i_species) + 1;
+                                        velocities(i_species, n_runs_vel(i_species)) = velocity;
+                                    end
                                 end
                                 starting_site(i_species, protein_ID) = -1;
                                 starting_datapoint(i_species, protein_ID) = -1;
@@ -321,21 +324,22 @@ for i_var = 1 : length(var1)
         [time_avg(i_var, j_var, xlink_SID), time_sem(i_var, j_var, xlink_SID)] = ...
             get_stats(xlink_SID, lifetimes, n_runs, 'exponential', "Lifetime (s)", output_folder, sim_name, "time");
         [vel_avg(i_var, j_var, xlink_SID), vel_sem(i_var, j_var, xlink_SID)] = ...
-            get_stats(xlink_SID, velocities, n_runs, 'normal', "Velocity (nm/s)", output_folder, sim_name, "vel");
+            get_stats(xlink_SID, velocities, n_runs_vel, 'normal', "Velocity (nm/s)", output_folder, sim_name, "vel");
         [vel_geo_avg(i_var, j_var, xlink_SID), vel_geo_sem(i_var, j_var, xlink_SID)] = ...
-            get_stats(xlink_SID, abs(velocities), n_runs, 'lognormal', "Geometric velocity (nm/s)", output_folder, sim_name, "velGeo");
+            get_stats(xlink_SID, abs(velocities), n_runs_vel, 'lognormal', "Geometric velocity (nm/s)", output_folder, sim_name, "velGeo");
+        if ~xlink_analysis_only
         [run_avg(i_var, j_var, motor_SID), run_sem(i_var, j_var, motor_SID)] = ...
             get_stats(motor_SID, abs(runlengths), n_runs, 'exponential', "Run length (um)", output_folder, sim_name, "run");
         [time_avg(i_var, j_var, motor_SID), time_sem(i_var, j_var, motor_SID)] = ...
             get_stats(motor_SID, lifetimes, n_runs, 'exponential', "Lifetime (s)", output_folder, sim_name, "time");
         [vel_avg(i_var, j_var, motor_SID), vel_sem(i_var, j_var, motor_SID)] = ...
-            get_stats(motor_SID, velocities, n_runs, 'normal', "Velocity (nm/s)", output_folder, sim_name, "vel");
+            get_stats(motor_SID, velocities, n_runs_vel, 'normal', "Velocity (nm/s)", output_folder, sim_name, "vel");
+        end
         %fprintf("(Xlinks) Run: %.2f ± %.2f | Time: %.2f ± %.2f | Vel: %.2f ± %.2f\n", avg_run_xlinks, err_run_xlinks, avg_time_xlinks, err_time_xlinks, avg_vel_xlinks, err_vel_xlinks)
         %fprintf("(Motors) Run: %.2f ± %.2f | Time: %.2f ± %.2f | Vel: %.2f ± %.2f\n", avg_run_motors, err_run_motors, avg_time_motors, err_time_motors, avg_vel_motors, err_vel_motors)
 
     end
 end
-%}
 net_flux = flux_plus - flux_minus;
 if strcmp(name,'protoNum') == 1
     disp("Normalizing flux values for protofilament number!");
@@ -344,6 +348,7 @@ if strcmp(name,'protoNum') == 1
        n_bound_avg(1, i, :) = n_bound_avg(1, i, :) * 8 / var2(i);
     end
 end
+%}
 
 % phase_runTh = figure('Position', [50, 100, 720, 540]);
 % hm = heatmap(run_theory, 'ColorLimits', [0 max(run_theory, [],'all')], 'FontName', 'Arial');
@@ -355,7 +360,11 @@ end
 % hm = heatmap(time_theory, 'ColorLimits', [0 max(time_theory, [],'all')], 'FontName', 'Arial');
 % hm.YDisplayData=flip(hm.YDisplayData);
 
-for SID =  1 : 1 : 2
+SID_end = 2;
+if xlink_analysis_only
+    SID_end = 1;
+end
+for SID =  1 : 1 : SID_end
     make_phase(abs(run_avg), var1, var2, var1Label, var2Label, "displacement (um)", output_folder, "run", name, SID)
     make_phase(time_avg, var1, var2, var1Label, var2Label, "lifetime (s)", output_folder, "time", name, SID)
     make_phase(abs(vel_avg), var1, var2, var1Label, var2Label, "velocity (nm/s)", output_folder, "vel", name, SID)
@@ -369,6 +378,16 @@ for SID =  1 : 1 : 2
     if SID == xlink_SID
         make_phase(abs(vel_geo_avg), var1, var2, var1Label, var2Label, "geometric velocity (nm/s)", output_folder, "velGeo", name, SID)
         make_plot(abs(vel_geo_avg), var1, var2, var1Label, var2Label, "geometric velocity (nm/s)", output_folder, "velGeo", name, SID);
+    end
+    make_phase(abs(run_sem), var1, var2, var1Label, var2Label, "displacement SEM (um)", output_folder, "run_err", name, SID)
+    make_phase(time_sem, var1, var2, var1Label, var2Label, "lifetime SEM (s)", output_folder, "time_err", name, SID)
+    make_phase(abs(vel_sem), var1, var2, var1Label, var2Label, "velocity SEM (nm/s)", output_folder, "vel_err", name, SID)
+    make_plot(abs(run_sem), var1, var2, var1Label, var2Label, "displacement SEM (um)", output_folder, "run_err", name, SID);
+    make_plot(time_sem, var1, var2, var1Label, var2Label, "lifetime SEM (s)", output_folder, "time_err", name, SID);
+    make_plot(abs(vel_sem), var1, var2, var1Label, var2Label, "velocity SEM (nm/s)", output_folder, "vel_err", name, SID);
+    if SID == xlink_SID
+        make_phase(abs(vel_geo_sem), var1, var2, var1Label, var2Label, "geometric velocity SEM (nm/s)", output_folder, "velGeo_err", name, SID)
+        make_plot(abs(vel_geo_sem), var1, var2, var1Label, var2Label, "geometric velocity SEM (nm/s)", output_folder, "velGeo_err", name, SID);
     end
 end
 
@@ -493,19 +512,19 @@ else
     return;
 end
 fig = figure('Position', [50, 100, 720, 540]);
-hm = heatmap(data, 'ColorLimits', [0 max(data, [],'all')], 'FontName', 'Arial');
+hm = heatmap(data, 'ColorLimits', [0 max(data, [],'all')], 'FontName', 'Arial', 'FontSize', 18);
 hm.YDisplayLabels = num2str( var1' );
 hm.YLabel = var1Label; 
 hm.XDisplayLabels = num2str( var2' );
 hm.XLabel = var2Label;
-hm.CellLabelFormat = '%.3g';
+hm.CellLabelFormat = '%.2g';
 hm.YDisplayData=flip(hm.YDisplayData);
 hm.GridVisible = 'off';
 hm.Units = 'centimeters'; 
 hm.Position(3:4) = min(hm.Position(3:4))*[1,1]; % make heatmap square
-set(gca, "FontSize", 16);
+set(gca, "FontSize", 18);
 set(gca, "FontName", "Arial");
-ylabel(hm.NodeChildren(2), "Average " + speciesLabel + " " + dataLabel, "FontSize", 18, "FontName", "Arial");
+ylabel(hm.NodeChildren(2), "Average " + speciesLabel + " " + dataLabel, "FontSize", 20, "FontName", "Arial");
 saveas(fig, sprintf('%s/phase_%s_%s_%s.png', output_folder, speciesLabel, plotname, name), 'png');
 saveas(fig, sprintf('%s/phase_%s_%s_%s.svg', output_folder, speciesLabel, plotname, name), 'svg');
 end
@@ -522,18 +541,31 @@ else
 end
 fig = figure('Position', [50 50 960 540]);
 if strcmp(name,'protoNum') == 1
-    plot([1 2 3 5 8], data', '.', 'MarkerSize', 50)
+    % if strcmp(plotname, "run") == 1 || strcmp(plotname, "vel") == 1 
+    %         semilogy([1 2 3 5 8], data', '.', 'MarkerSize', 50)
+    % else
+            plot([1 2 3 5 8], data', '.', 'MarkerSize', 50)
+    % end
+    hold on
     xticks([1 2 3 5 8])
     xlim([0 10]);
+    if strcmp(plotname, "run") == 1
+        %ylim([1 15]);
+        ylim([0 16]);
+    elseif strcmp(plotname, "vel") == 1 
+        %ylim([1 1000]);
+        ylim([0 550]);
+    else
+        ylim([0 1.15*max(data)]);
+    end
 else
     plot(data', '.', 'MarkerSize', 50)
     xticks(1:length(var2));
     xticklabels(num2str( var2' ));
     xlim([0 length(var2)+1]);
+    ylim([0 1.15*max(data, [], "all")]);
+    hold on
 end
-ylim([0 1.15*max(data)]);
-xlabel(var2Label);
-ylabel("Average " + speciesLabel + " " + dataLabel);
 legendLabel = num2str( var1' );
 leg = legend(legendLabel, 'Location', 'northeastoutside');
 title(leg, var1Label);
@@ -542,6 +574,8 @@ set(gca, 'FontSize', 18);
 set(gca,'box','off')
 set(gca,'TickDir','out');
 set(gca,'LineWidth',1,'TickLength',[0.025 0.025]);
+xlabel(var2Label, 'FontSize', 20);
+ylabel("Average " + speciesLabel + " " + dataLabel, 'FontSize', 20);
 pbaspect([1 1 1]);
 saveas(fig, sprintf('%s/plot_%s_%s_%s.png', output_folder, speciesLabel, plotname, name), 'png');
 saveas(fig, sprintf('%s/plot_%s_%s_%s.svg', output_folder, speciesLabel, plotname, name), 'svg');
