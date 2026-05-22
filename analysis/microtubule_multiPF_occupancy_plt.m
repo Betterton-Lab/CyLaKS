@@ -12,7 +12,8 @@ sim_name = 'output24/shep_1nM_100nM_8_1000_0.6kT_2x_1.5x_0';
 sim_name = 'output28/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
 sim_name = 'out_final/shep_0.1nM_100nM_8_1000_0.6kT_3x_5x_0';
 sim_name = 'out_final_newCombos/shep_0.75nM_30nM_8_1000_0.6kT_3x_5x_0';
- 
+sim_name = 'out_final_johann/shep_0.042nM_2.8nM_1_500_0.0kT_3x_5x_0';
+sim_name = 'out_final_johann_long5e-5/shep_0.042nM_2.8nM_1_500_0.0kT_5e-5_0';
 
 % Load parameter structure
 file_dir = '..'; 

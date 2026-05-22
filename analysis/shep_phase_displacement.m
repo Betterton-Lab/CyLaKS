@@ -4,12 +4,13 @@ clear variables;
 site_SID = 0;
 xlink_SID = 1;
 motor_SID = 2;
-endtag_boundary = 125; 
+endtag_boundary = 2500; %1000; %125; 
 flux_win_size = 500;
 vel_limit_upper = 3000;
 vel_limit_lower = 0;
 
-xlink_analysis_only = true;
+exclude_all_past_endtag = true; %false;
+xlink_analysis_only = false; %true;
 
 seeds = [0];
 %{
@@ -48,6 +49,7 @@ var2 = [0.1, 0.3, 1, 3, 10];
 var2Label = 'Relative crosslinker lifetime';
 %}
 
+%{
 name = 'xlinkDiffNorm';%'xlinkDiff';
 %sim_name_base = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_xlinkDiffNorm_%gx_%gx';
 sim_name_base = 'shep_0.1nM_10nM_8_1000_0.6kT_0_xlinkDiffNorm_%gx_%gx';
@@ -60,18 +62,37 @@ var2 = [0.03, 0.1, 0.3, 1, 3, 10, 30];
 var2Label = 'Relative longitudinal diffusion';
 %}
 
-%{
 name = 'protoNum';
-sim_name_base = 'shep_0.1nM_50nM_%i_5000_%.1fkT_3x_5x_0';
+sim_name_base = 'shep_0.1nM_10nM_%i_5000_%.1fkT_3x_5x_0';
 file_dir = '../out_final_protoNum_5x';
-output_folder = 'plots_protoNumber_5x_50nM_125velOnly_noVelLimit';
+%output_folder = 'plots_protoNumber_5x_50nM_125velOnly_noVelLimit';
+output_folder = 'plots_protoNumber_motStats_5x_10nM_2500all_noVelLimit'
 var1 = [1];
 var1Label = "";
-var2 = [1, 2, 3, 5, 8];
+var2 = [1, 2, 3]; %, 5, 8];
 var2Label = "Protofilament Number";
 energies = [1.2, 0.8, 0.6, 0.6, 0.6];
 %}
-
+%{
+name = 'noCoop';
+sim_name_base = 'shep_%gnM_%gnM_8_1000_0.0kT_3x_5x_0';
+file_dir = '../out_final_noCoop';
+output_folder = 'plots_noCoop_125velOnly_noVelLimit';
+var1 = [0.1, 1.0];
+var1Label = 'MAP Concentration (nM)';
+var2 = [10, 100];
+var2Label = 'Motor Concentration (nM)';
+%}
+%{
+name = 'allConcs';
+sim_name_base = 'shep_%gnM_%gnM_8_1000_0.6kT_3x_5x_0';
+file_dir = '../out_final';
+output_folder = 'plots_final_1000_125velOnly_noVelLimit';
+var1 = [0.1, 1.0];
+var1Label = 'MAP Concentration (nM)';
+var2 = [1, 10, 50, 100, 250, 500, 1000];
+var2Label = 'Motor Concentration (nM)';
+%}
 run_avg = zeros(length(var1), length(var2), 2);
 run_sem = zeros(length(var1), length(var2), 2);
 time_avg = zeros(length(var1), length(var2), 2);
@@ -99,17 +120,23 @@ end
 
 for i_var = 1 : length(var1)
     for j_var = 1 : length(var2)
+        % for 'allConcs' only
+        % if i_var == 1 && j_var > 4
+        %     continue;
+        % end
         % for motor + xlink lifetimes + motor vel
         %sim_name = sprintf(sim_name_base, var1(i_var), var2(j_var)) %, seeds(i_seed));
         %sim_name = sprintf(sim_name_base, n_pfs(j_var), var1(i_var), var2(j_var)) %, seeds(i_seed));
         % for xlink diffusion
+        %{
          if i_var == 1
              sim_name = sprintf("shep_0.1nM_10nM_8_1000_0.6kT_0_xlinkDiffNorm_%gx_0.0x", var2(j_var))
          else
              sim_name = sprintf(sim_name_base, var2(j_var), var1(i_var)) %, seeds(i_seed));
          end
+         %}
          %for protoNumer
-        %sim_name = sprintf(sim_name_base, var2(j_var), energies(j_var))
+        sim_name = sprintf(sim_name_base, var2(j_var), energies(j_var))
         try
             params = load_parameters(sprintf('%s/%s', file_dir, sim_name));
             catch_triggered = false;
@@ -296,12 +323,16 @@ for i_var = 1 : length(var1)
                                 velocity = (run_length / run_time) * 1000; % convert to nm/s
                                 % If time bound is above time cutoff, add to data
                                 if run_time >= params.time_per_datapoint && abs(velocity) > vel_limit_lower && abs(velocity) < vel_limit_upper
-                                    n_runs(i_species) = n_runs(i_species) + 1;
-                                    runlengths(i_species, n_runs(i_species)) = run_length;
-                                    lifetimes(i_species, n_runs(i_species)) = run_time;
                                     if end_site(1) > endtag_boundary
+                                        n_runs(i_species) = n_runs(i_species) + 1;
+                                        runlengths(i_species, n_runs(i_species)) = run_length;
+                                        lifetimes(i_species, n_runs(i_species)) = run_time;
                                         n_runs_vel(i_species) = n_runs_vel(i_species) + 1;
                                         velocities(i_species, n_runs_vel(i_species)) = velocity;
+                                    elseif ~exclude_all_past_endtag
+                                        n_runs(i_species) = n_runs(i_species) + 1;
+                                        runlengths(i_species, n_runs(i_species)) = run_length;
+                                        lifetimes(i_species, n_runs(i_species)) = run_time;
                                     end
                                 end
                                 starting_site(i_species, protein_ID) = -1;

@@ -3,11 +3,13 @@ clear variables;
 %sim_name = 'shep_0.1nM_100nM_8_3000_0.6kT_3x_5x_3';
 %file_dir = "../";%out_final_xlinkOnlyLong";
 %sim_name = 'out_final_motorVelWeighted2/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_1x_1x'
-output_folder = 'kymo_output_motorVelocityWeighted2';
+%output_folder = 'kymo_output_motorVelocityWeighted2';
+output_folder = 'kymo_output_noCoop';
 subfilaments = true; 
 
 %
-file_dir = '../out_final_motorVelWeighted2';
+%file_dir = '../out_final_motorVelWeighted2';
+file_dir = '../out_final_noCoop';
 %output_folder = '.';
 %name_format = 'shep_%gnM_%gnM_8_%i_0.6kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_%gnM_8_%i_0.6kT_3x_5x_%i_motor_%gx';
@@ -15,8 +17,11 @@ file_dir = '../out_final_motorVelWeighted2';
 %name_format = 'shep_0.1nM_10nM_8_%i_0.6kT_3x_5x_%i_xlinkDiff_%gx_%gx';
 %name_format = 'shep_0.1nM_50nM_8_%i_0.6kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_50nM_%i_1000_1.2kT_3x_5x_%i';
-name_format = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_%gx_%gx';
+%name_format = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_%gx_%gx';
+%name_format = 'shep_%gnM_%inM_8_1000_0.0kT_3x_5x';
+sim_name = 'shep_0.1nM_10nM_8_1000_0.0kT_3x_5x_0';
 
+%{
 %vars_one = [0.1, 1];
 %vars_one = [0.75];
 %vars_one = [10, 30, 100];
@@ -59,8 +64,8 @@ frac_visible_xlink = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 frac_visible_motor = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 
 tubulin_intensity = 0.0; % 0.01;
-xlink_intensity = 0.003; %0.05;  % Controls how bright a single xlink is 
-motor_intensity = 0.0008; %0.0015;  % ditto but for motors 
+xlink_intensity = 0.003; %0.05;  % Controls how bright a single xlink is; 0.003 for 0.1 nM
+motor_intensity = 0.0008; %0.0015;  % ditto but for motors; 0.0008 for 100 nM
 
 % Scale bar lengths 
 scale_x = 2; %5; %2.5; %1; % microns
@@ -315,8 +320,10 @@ saveas(fig_combined, sprintf('%s/kymo_%s_%g_%g_combo.svg', output_folder, sim_na
 close(fig_motor)
 close(fig_xlink)
 close(fig_combined)
+
+%{
             end
         end
     end
 end
-
+%}

@@ -11,14 +11,20 @@ sim_name = 'outputProto3/shep_1nM_100nM_1_1000_1.0kT_2x_0.3x_0';
 %sim_name = 'output25/shep_1nM_100nM_8_1000_0.5kT_2x_0.3x_0';
 sim_name = 'output28/shep_1nM_100nM_8_1000_0.6kT_2.5x_3x_0';
 sim_name = 'output24/shep_1nM_100nM_8_1000_0.6kT_2x_1.5x_0';
-sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0'
- 
+sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
+%sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_5e-5_0';
+sim_name = 'out_final_johann_altCeff/shep_0.504nM_33.52nM_1_500_0.0kT_altCeff_0';
+%sim_name = 'out_final_johann_altCeff/shep_0.504nM_0.3352nM_1_500_0.0kT_altCeff_0';
+%sim_name = 'out_final_johann_long/shep_0.504nM_0.3352nM_1_500_0.0kT_0';
 
-output_movie_name = 'out_multiPF';
+output_movie_name = 'out_johann_test'
+
+size_x = 600;
+size_y = 400;
 
 start_frame = 1;
-frames_per_plot = 200; % in n_datapoints; number of timesteps per output plot
-end_frame = -1;  % set to -1 to run until end of data
+frames_per_plot = 1000; % in n_datapoints; number of timesteps per output plot
+end_frame = 6000;  % set to -1 to run until end of data
 movie_duration = 30; % in seconds
 
 % Load parameter structure
@@ -34,7 +40,7 @@ occupancy = load_data(occupancy, occupancy_filename, '*int');
 v = VideoWriter(output_movie_name);
 v.FrameRate = (params.n_datapoints / frames_per_plot) / 15;
 open(v);
-frame_box = [0, 0, 1200, 300];
+frame_box = [0, 0, size_x, size_y];
 
 xlink_speciesID = 1;
 motor_speciesID = 2;
@@ -56,7 +62,7 @@ motor_avg_occupancy = zeros([params.max_sites params.n_mts]);
 motor_avg_occupancy_tot = zeros([params.max_sites 1]);
 xlink_avg_occupancy_tot = zeros([params.max_sites 1]);
 
-fig1 = figure('Position', [50, 250, 1200, 300]);
+fig1 = figure('Position', [50, 250, size_x, size_y]);
 %set(fig1, 'Position', [50, 50, 1200, 300])
 
 % Read in and average occupancy data over all datapoints
@@ -98,6 +104,7 @@ for i = 1:1:int32(params.n_datapoints)
                 xlink_occupancy(:, i_pf), 'Color', colors(i_pf, :), 'LineWidth', 1.25);
         end
         %}
+        yyaxis left
         plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
             xlink_occupancy_tot, 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
         %{
@@ -106,10 +113,11 @@ for i = 1:1:int32(params.n_datapoints)
                 motor_occupancy(:, i_pf), '--', 'Color', colors(i_pf, :), 'LineWidth', 1.25);
         end
         %}
+        yyaxis right
         plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
             motor_occupancy_tot, '--', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
-                plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
-            motor_occupancy_tot + xlink_occupancy_tot, '.', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
+        %plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
+        %    motor_occupancy_tot + xlink_occupancy_tot, '.', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
         %plot(linspace(0, n_sites*0.008, n_sites), net_occupancy);
         % plot(linspace(0, n_sites*0.008, n_sites), occupancy_slope);
         % plot(linspace(0, n_sites*0.008, n_sites), occupancy_accel);
@@ -117,9 +125,12 @@ for i = 1:1:int32(params.n_datapoints)
         %plot([endtag_length endtag_length], [0 1], ':', 'LineWidth', 2, 'Color', 'red');
 
         %title(sprintf('End-tag length: %g microns', endtag_length), 'FontSize', 14)
+        yyaxis left
         xlabel('Distance from plus-end (\mum)', 'FontSize', 14);
-        ylabel('Fractional site occupancy', 'FontSize', 14);
+        ylabel('Fractional site occupancy', 'FontSize', 14);        yyaxis left
         ylim([0 1]);
+        yyaxis right
+        ylim([0 0.25]);
         five_percent = params.max_sites * params.site_size / 20.0;
         xlim([-five_percent params.max_sites * params.site_size + five_percent]);
         set(gca, 'FontSize', 14);
@@ -137,8 +148,9 @@ for i = 1:1:int32(params.n_datapoints)
         %}
         legendLabel = {'Xlinks (avg)', 'Motors(avg)'};
         legend(legendLabel, 'Location', 'northeastoutside');
+        pbaspect([1 1 1]);
 
-        dim = [0.7425 0.0 .3 .2];
+        dim = [0.7 0.0 .3 .2];
         time = i * params.time_per_datapoint;
         str = sprintf('Time: %i seconds', int32(time));
         annotation('textbox', dim, 'String', str, 'FitBoxToText', 'on');
