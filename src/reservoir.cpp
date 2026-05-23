@@ -1,9 +1,11 @@
 #include "cylaks/reservoir.hpp"
 #include "cylaks/motor.hpp"
 #include "cylaks/protein.hpp"
+#include "cylaks/simple_motor.hpp"
 
 template class Reservoir<Motor>;
 template class Reservoir<Protein>;
+template class Reservoir<SimpleMotor>;
 
 template <typename ENTRY_T>
 void Reservoir<ENTRY_T>::GenerateEntries(size_t n_entries) {

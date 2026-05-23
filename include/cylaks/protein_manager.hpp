@@ -1,9 +1,11 @@
 #ifndef _CYLAKS_PROTEIN_MANAGER_HPP_
 #define _CYLAKS_PROTEIN_MANAGER_HPP_
+#include "cylaks/simple_motor.hpp"
 #include "event_manager.hpp"
 #include "motor.hpp"
 #include "protein.hpp"
 #include "reservoir.hpp"
+#include "simple_motor.hpp"
 #include "system_namespace.hpp"
 #include "system_parameters.hpp"
 #include "system_rng.hpp"
@@ -18,6 +20,7 @@ protected:
 
 public:
   Reservoir<Motor> motors_;
+  Reservoir<SimpleMotor> simple_motors_;
   Reservoir<Protein> xlinks_;
   EventManager kmc_;
 

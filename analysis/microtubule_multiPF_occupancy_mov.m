@@ -12,10 +12,8 @@ sim_name = 'outputProto3/shep_1nM_100nM_1_1000_1.0kT_2x_0.3x_0';
 sim_name = 'output28/shep_1nM_100nM_8_1000_0.6kT_2.5x_3x_0';
 sim_name = 'output24/shep_1nM_100nM_8_1000_0.6kT_2x_1.5x_0';
 sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
-%sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_5e-5_0';
-sim_name = 'out_final_johann_altCeff/shep_0.504nM_33.52nM_1_500_0.0kT_altCeff_0';
-%sim_name = 'out_final_johann_altCeff/shep_0.504nM_0.3352nM_1_500_0.0kT_altCeff_0';
-%sim_name = 'out_final_johann_long/shep_0.504nM_0.3352nM_1_500_0.0kT_0';
+sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_0.01xCeff_0';
+%sim_name = 'out_final_johann/shep_johann_simpleMotors';
 
 output_movie_name = 'out_johann_test'
 
@@ -104,18 +102,18 @@ for i = 1:1:int32(params.n_datapoints)
                 xlink_occupancy(:, i_pf), 'Color', colors(i_pf, :), 'LineWidth', 1.25);
         end
         %}
-        yyaxis left
+        yyaxis right
         plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
-            xlink_occupancy_tot, 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
+            flip(xlink_occupancy_tot), 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
         %{
         for i_pf = 1 : 1 : params.n_mts
             plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
                 motor_occupancy(:, i_pf), '--', 'Color', colors(i_pf, :), 'LineWidth', 1.25);
         end
         %}
-        yyaxis right
+        yyaxis left
         plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
-            motor_occupancy_tot, '--', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
+            flip(motor_occupancy_tot), '--', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
         %plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
         %    motor_occupancy_tot + xlink_occupancy_tot, '.', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
         %plot(linspace(0, n_sites*0.008, n_sites), net_occupancy);
@@ -125,12 +123,12 @@ for i = 1:1:int32(params.n_datapoints)
         %plot([endtag_length endtag_length], [0 1], ':', 'LineWidth', 2, 'Color', 'red');
 
         %title(sprintf('End-tag length: %g microns', endtag_length), 'FontSize', 14)
-        yyaxis left
-        xlabel('Distance from plus-end (\mum)', 'FontSize', 14);
-        ylabel('Fractional site occupancy', 'FontSize', 14);        yyaxis left
-        ylim([0 1]);
         yyaxis right
-        ylim([0 0.25]);
+        xlabel('Distance from plus-end (\mum)', 'FontSize', 14);
+        ylabel('Fractional site occupancy', 'FontSize', 14);      
+        ylim([0 1]);
+        yyaxis left
+        ylim([0 0.1]);
         five_percent = params.max_sites * params.site_size / 20.0;
         xlim([-five_percent params.max_sites * params.site_size + five_percent]);
         set(gca, 'FontSize', 14);

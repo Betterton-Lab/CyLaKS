@@ -1,5 +1,6 @@
 #include "cylaks/protein_manager.hpp"
 #include "cylaks/filament_manager.hpp"
+#include "cylaks/simple_motor.hpp"
 
 void ProteinManager::FlagFilamentsForUpdate() { filaments_->FlagForUpdate(); }
 
@@ -23,6 +24,7 @@ void ProteinManager::GenerateReservoirs() {
   }
   // Initialize the motor reservoir
   motors_.Initialize(_id_motor, reservoir_size, motor_step_active);
+  simple_motors_.Initialize(_id_motor, reservoir_size, 0);
   // Convert t_active parameter from seconds to number of simulation timesteps
   size_t xlink_step_active{size_t(Params::Xlinks::t_active / Params::dt)};
   if (Params::Xlinks::c_bulk == 0.0) {
@@ -141,9 +143,15 @@ void ProteinManager::InitializeWeights() {
 
 void ProteinManager::SetParameters() {
 
+  double johann_k_step{12.0};               // sites per second
+  double johann_k_on{1e-2 * johann_k_step}; // per second per site
+  double johann_k_off{1.56};                // per second
+
   using namespace Params;
   // Bind I
   motors_.AddProb("bind_i", Motors::k_on * Motors::c_bulk * dt);
+  simple_motors_.AddProb("bind_i", johann_k_on * dt);
+  simple_motors_.AddProb("step", johann_k_step * dt);
   xlinks_.AddProb("bind_i", Xlinks::k_on * Xlinks::c_bulk * dt, "neighbs", 0);
   // Bind_ATP_I -- motors only
   double p_bind_ATP{Motors::k_on_ATP * Motors::c_ATP * dt};
@@ -182,6 +190,7 @@ void ProteinManager::SetParameters() {
     wt_unbind_i = exp(Motors::applied_force * Motors::sigma_off_i / kbT);
   }
   motors_.AddProb("unbind_i", Motors::k_off_i * dt * wt_unbind_i);
+  simple_motors_.AddProb("unbind_i", johann_k_off * dt);
   xlinks_.AddProb("unbind_i", Xlinks::k_off_i * dt, "neighbs", 1);
   if (Params::Filaments::n_subfilaments > 1) {
     double p_bind_i{Xlinks::k_on * Xlinks::c_bulk * dt};
@@ -463,10 +472,59 @@ void ProteinManager::InitializeEvents() {
     }
     bool executed{entry->Bind(site, entry->GetHeadOne())};
     if (executed) {
+      // printf("bind to site %zu\n", site->index_);
       pop->AddToActive(entry);
     }
     return executed;
   };
+  if (simple_motors_.active_) {
+    filaments_->AddPop("unbinned", is_unocc);
+    kmc_.events_.emplace_back(
+        "bind_i (simple_motors)", simple_motors_.p_event_.at("bind_i").GetVal(),
+        &filaments_->unoccupied_.at("unbinned").size_,
+        &filaments_->unoccupied_.at("unbinned").entries_, binomial,
+        [&](Object *base) {
+          return exe_bind_i(dynamic_cast<BindingSite *>(base), &simple_motors_,
+                            filaments_);
+        });
+
+    simple_motors_.AddPop("bound_i", is_bound_i); // simple_is_bound);
+    auto exe_simple_step = [](auto *head, auto *pop) {
+      if (head->site_ == head->site_->filament_->plus_end_) {
+        bool executed{head->Unbind()};
+        if (executed) {
+          pop->RemoveFromActive(head->parent_);
+        }
+        return executed;
+      }
+      bool executed{head->Step()};
+      return executed;
+    };
+    kmc_.events_.emplace_back(
+        "step (simple_motors)", simple_motors_.p_event_.at("step").GetVal(),
+        &simple_motors_.sorted_.at("bound_i").size_,
+        &simple_motors_.sorted_.at("bound_i").entries_, binomial,
+        [&](Object *base) {
+          return exe_simple_step(dynamic_cast<SimpleMotorHead *>(base),
+                                 &simple_motors_);
+        });
+    auto exe_simple_unbind = [](auto *head, auto *pop) {
+      bool executed{head->Unbind()};
+      if (executed) {
+        pop->RemoveFromActive(head->parent_);
+      }
+      return executed;
+    };
+    kmc_.events_.emplace_back("unbind_i (simple_motors)",
+                              simple_motors_.p_event_.at("unbind_i").GetVal(),
+                              &simple_motors_.sorted_.at("bound_i").size_,
+                              &simple_motors_.sorted_.at("bound_i").entries_,
+                              binomial, [&](Object *base) {
+                                return exe_simple_unbind(
+                                    dynamic_cast<SimpleMotorHead *>(base),
+                                    &simple_motors_);
+                              });
+  }
   if (motors_.active_) {
     // Add unoccupied site tracker for motors; no binning b/c it's Poisson-based
     filaments_->AddPop("unbinned", is_unocc);
@@ -880,11 +938,13 @@ void ProteinManager::RunKMC() {
   // }
   UpdateFilaments();
   motors_.PrepForKMC();
+  simple_motors_.PrepForKMC();
   xlinks_.PrepForKMC();
   // Sys::Log(1, "BEGIN KMC EVENTS\n");
   bool event_executed{kmc_.ExecuteEvents()};
   if (event_executed) {
     motors_.FlagForUpdate();
+    simple_motors_.FlagForUpdate();
     xlinks_.FlagForUpdate();
     filaments_->FlagForUpdate();
   }

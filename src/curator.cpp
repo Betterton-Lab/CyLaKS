@@ -430,6 +430,7 @@ void Curator::GenerateDataFiles() {
   auto AddDataFile = [&](Str name) {
     data_files_.emplace(name, Sys::DataFile(name));
   };
+  bool simple_motors_active{proteins_.simple_motors_.active_};
   bool motors_active{proteins_.motors_.active_};
   bool motors_tethering{proteins_.motors_.tethering_active_};
   bool xlinks_active{proteins_.xlinks_.active_};
@@ -443,7 +444,7 @@ void Curator::GenerateDataFiles() {
   // Open filament pos file, which stores the N-dim coordinates of the two
   // endpoints of each filament every datapoint
   AddDataFile("filament_pos");
-  if (motors_active or xlinks_active) {
+  if (motors_active or xlinks_active or simple_motors_active) {
     // Open occupancy file, which stores the species ID of each occupant
     // (or -1 for none) for all MT sites during data collection (DC)
     AddDataFile("occupancy");
@@ -563,6 +564,7 @@ void Curator::OutputData() {
   }
   // Choose correct object to read data from
   size_t n_pfs{filaments_.protofilaments_.size()};
+  bool simple_motors_active{proteins_.simple_motors_.active_};
   bool motors_active{proteins_.motors_.active_};
   bool motors_tethering{proteins_.motors_.tethering_active_};
   bool xlinks_active{proteins_.xlinks_.active_};
@@ -594,7 +596,7 @@ void Curator::OutputData() {
     }
     data_files_.at("filament_pos").Write(coord1, _n_dims_max);
     data_files_.at("filament_pos").Write(coord2, _n_dims_max);
-    if (!motors_active and !xlinks_active) {
+    if (!motors_active and !xlinks_active and !simple_motors_active) {
       continue;
     }
     int occupancy[n_sites_max_];
@@ -616,6 +618,7 @@ void Curator::OutputData() {
       const size_t species_id{site.occupant_->GetSpeciesID()};
       occupancy[site.index_] = species_id;
       protein_id[site.index_] = site.occupant_->GetID();
+      // printf("%zu - %zu\n", species_id, site.occupant_->GetID());
       if (species_id == _id_xlink) {
         if (site.occupant_->parent_->n_heads_active_ == 2) {
           partner_index[site.index_] =
@@ -628,7 +631,7 @@ void Curator::OutputData() {
             }
           }
         }
-      } else if (species_id == _id_motor) {
+      } else if (species_id == _id_motor and motors_active) {
         motor_trailing[site.index_] = site.occupant_->Trailing();
         if (site.occupant_->parent_->IsTethered()) {
           auto partner{site.occupant_->parent_->teth_partner_};

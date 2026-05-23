@@ -33,6 +33,7 @@ void EventManager::SampleEventStatistics() {
   for (int i_entry{0}; i_entry < n_events_to_exe_; i_entry++) {
     Event *event_i{active_events[i_entry].first};
     Object *tar_i{active_events[i_entry].second};
+    // printf("SID: %i\n", tar_i->GetSpeciesID());
     Sys::Log(2, "   event_i = %s @ %zu\n", event_i->name_.c_str(),
              tar_i->GetID());
     for (int j_entry{i_entry + 1}; j_entry < n_events_to_exe_; j_entry++) {

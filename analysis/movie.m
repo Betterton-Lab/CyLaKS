@@ -7,17 +7,18 @@ sim_name = 'shep_50x_0.02_0.5kT_0.131_0.131_0.1nM_10nM';
 sim_name = 'outputProto/shep_1nM_100nM_1_1000_0.4kT_0.1x_0.3x_0';
 sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
 %sim_name = 'out_final_newCombos/shep_0.75nM_30nM_8_1000_0.6kT_3x_5x_0';
-sim_name = 'out_final_motorVelWeighted/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_30x_30x'
+sim_name = 'out_final_motorVelWeighted/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_30x_30x';
 %sim_name_base = 'final_motility_0.1nM_1x';
 sim_name = 'out_final_johann/shep_0.042nM_2.8nM_1_500_0.0kT_3x_5x_0';
 sim_name = 'out_final_johann_long5e-5/shep_0.042nM_2.8nM_1_500_0.0kT_5e-5_0';
+sim_name = 'test';
 
 output_movie_name = 'test';
 
 start_frame = 1; %250;
 end_frame = -1;  % set to -1 to run until end of data
 
-frames_per_plot = 1000; 
+frames_per_plot = 10; 
 movie_duration = 60; % in seconds
 
 % Load parameter structure
@@ -129,9 +130,9 @@ for i_data = start_frame : frames_per_plot : end_frame
         for i_site = 1 : n_sites
             id = protein_ids(i_site, i_mt, i_data);
             sid = occupancy(i_site, i_mt, i_data);
-            if i_site > 300
-                continue
-            end
+            %if i_site > 300
+            %    continue
+            %end
             if(id ~= -1)
                 pos_x = plus_pos(1) + ((i_site-1)/(n_sites-1))*line_vec(1);
                 pos_y = plus_pos(2) + ((i_site-1)/(n_sites-1))*line_vec(2);
