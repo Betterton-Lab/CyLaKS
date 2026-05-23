@@ -18,7 +18,7 @@ output_movie_name = 'test';
 start_frame = 1; %250;
 end_frame = -1;  % set to -1 to run until end of data
 
-frames_per_plot = 10; 
+frames_per_plot = 1; %0; 
 movie_duration = 60; % in seconds
 
 % Load parameter structure

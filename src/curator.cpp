@@ -1,4 +1,6 @@
 #include "cylaks/curator.hpp"
+#include "cylaks/simple_motor.hpp"
+#include "cylaks/system_parameters.hpp"
 #include "yaml-cpp/parser.h"
 #include "yaml-cpp/yaml.h"
 
@@ -322,6 +324,10 @@ void Curator::ParseParameters() {
       exit(1);
     }
   }
+  Log(" Simple motor parameters:\n");
+  ParseYAML(&SimpleMotors::k_on, "simple_motors.k_on", "1/s");
+  ParseYAML(&SimpleMotors::k_step, "simple_motors.k_step", "sites/s");
+  ParseYAML(&SimpleMotors::k_off, "simple_motors.k_off", "1/s");
   Log(" Kinesin (motor) parameters:\n");
   ParseYAML(&Motors::n_runs_to_exit, "motors.n_runs_to_exit", "runs");
   ParseYAML(&Motors::gaussian_range, "motors.gaussian_range", "sites");

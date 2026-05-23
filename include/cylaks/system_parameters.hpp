@@ -31,6 +31,11 @@ inline bool wca_potential_enabled;    // Toggle WCA potential between filaments
 inline std::vector<double> f_applied; // Force applied to filament COM; pN
 
 }; // namespace Filaments
+namespace SimpleMotors {
+inline double k_on;
+inline double k_step;
+inline double k_off;
+}; // namespace SimpleMotors
 namespace Motors {
 inline size_t n_runs_to_exit; // Number of post-equil. runs to trigger an exit
 inline size_t gaussian_range; // Range of Gaussian interaction; n_sites

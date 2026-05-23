@@ -1,6 +1,7 @@
 #include "cylaks/protein_manager.hpp"
 #include "cylaks/filament_manager.hpp"
 #include "cylaks/simple_motor.hpp"
+#include "cylaks/system_parameters.hpp"
 
 void ProteinManager::FlagFilamentsForUpdate() { filaments_->FlagForUpdate(); }
 
@@ -24,7 +25,13 @@ void ProteinManager::GenerateReservoirs() {
   }
   // Initialize the motor reservoir
   motors_.Initialize(_id_motor, reservoir_size, motor_step_active);
-  simple_motors_.Initialize(_id_motor, reservoir_size, 0);
+  size_t simple_motor_step_active{
+      size_t(Params::Motors::t_active / Params::dt)};
+  if (Params::SimpleMotors::k_on == 0.0) {
+    simple_motor_step_active = std::numeric_limits<size_t>::max();
+  }
+  simple_motors_.Initialize(_id_motor, reservoir_size,
+                            simple_motor_step_active);
   // Convert t_active parameter from seconds to number of simulation timesteps
   size_t xlink_step_active{size_t(Params::Xlinks::t_active / Params::dt)};
   if (Params::Xlinks::c_bulk == 0.0) {
@@ -143,15 +150,11 @@ void ProteinManager::InitializeWeights() {
 
 void ProteinManager::SetParameters() {
 
-  double johann_k_step{12.0};               // sites per second
-  double johann_k_on{1e-2 * johann_k_step}; // per second per site
-  double johann_k_off{1.56};                // per second
-
   using namespace Params;
   // Bind I
   motors_.AddProb("bind_i", Motors::k_on * Motors::c_bulk * dt);
-  simple_motors_.AddProb("bind_i", johann_k_on * dt);
-  simple_motors_.AddProb("step", johann_k_step * dt);
+  simple_motors_.AddProb("bind_i", SimpleMotors::k_on * dt);
+  simple_motors_.AddProb("step", SimpleMotors::k_step * dt);
   xlinks_.AddProb("bind_i", Xlinks::k_on * Xlinks::c_bulk * dt, "neighbs", 0);
   // Bind_ATP_I -- motors only
   double p_bind_ATP{Motors::k_on_ATP * Motors::c_ATP * dt};
@@ -190,7 +193,7 @@ void ProteinManager::SetParameters() {
     wt_unbind_i = exp(Motors::applied_force * Motors::sigma_off_i / kbT);
   }
   motors_.AddProb("unbind_i", Motors::k_off_i * dt * wt_unbind_i);
-  simple_motors_.AddProb("unbind_i", johann_k_off * dt);
+  simple_motors_.AddProb("unbind_i", SimpleMotors::k_off * dt);
   xlinks_.AddProb("unbind_i", Xlinks::k_off_i * dt, "neighbs", 1);
   if (Params::Filaments::n_subfilaments > 1) {
     double p_bind_i{Xlinks::k_on * Xlinks::c_bulk * dt};
