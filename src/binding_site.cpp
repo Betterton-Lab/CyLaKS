@@ -1,6 +1,7 @@
 #include "cylaks/binding_site.hpp"
 #include "cylaks/binding_head.hpp"
 #include "cylaks/protofilament.hpp"
+#include "cylaks/system_definitions.hpp"
 
 int BindingSite::GetNumNeighborsOccupied_Tot() {
 
@@ -33,6 +34,50 @@ int BindingSite::GetNumNeighborsOccupied_Tot_Side() {
   if (filament_->bot_neighb_ != nullptr) {
     if (filament_->bot_neighb_->sites_[index_].occupant_ != nullptr) {
       n_neighbs++;
+    }
+  }
+  return n_neighbs;
+}
+
+int BindingSite::GetNumNeighborsOccupied_AltMAP() {
+
+  if (_n_neighbs_max == 0) {
+    return 0;
+  }
+  int n_neighbs{0};
+  for (auto const &site : neighbors_) {
+    if (site->occupant_ != nullptr) {
+      if (occupant_ != nullptr) {
+        if (occupant_->parent_ != site->occupant_->parent_) {
+          if (site->occupant_->GetSpeciesID() == _id_altMAP) {
+            n_neighbs++;
+          }
+        }
+      } else if (site->occupant_->GetSpeciesID() == _id_altMAP) {
+        n_neighbs++;
+      }
+    }
+  }
+  return n_neighbs;
+}
+
+int BindingSite::GetNumNeighborsOccupied_AltMAP_Side() {
+
+  int n_neighbs{0};
+  if (filament_->top_neighb_ != nullptr) {
+    if (filament_->top_neighb_->sites_[index_].occupant_ != nullptr) {
+      if (filament_->top_neighb_->sites_[index_].occupant_->GetSpeciesID() ==
+          _id_altMAP) {
+        n_neighbs++;
+      }
+    }
+  }
+  if (filament_->bot_neighb_ != nullptr) {
+    if (filament_->bot_neighb_->sites_[index_].occupant_ != nullptr) {
+      if (filament_->bot_neighb_->sites_[index_].occupant_->GetSpeciesID() ==
+          _id_altMAP) {
+        n_neighbs++;
+      }
     }
   }
   return n_neighbs;

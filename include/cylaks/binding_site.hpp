@@ -87,6 +87,8 @@ public:
   int GetNumNeighborsOccupied_Tot_Side();
   int GetNumNeighborsOccupied_Xlink();
   int GetNumNeighborsOccupied_Xlink_Side();
+  int GetNumNeighborsOccupied_AltMAP();
+  int GetNumNeighborsOccupied_AltMAP_Side();
   int GetNumNeighborsOccupied_Motor();
   int GetNumNeighborsOccupied_Motor_Side();
 

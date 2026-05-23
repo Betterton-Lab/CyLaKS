@@ -2,7 +2,7 @@ seed: 198261346419
 kbT: 4.114
 eta: 0.001 # water
 dt: 5e-5 #0.000005 # 0.00005 # 0.0002 # 0.00002
-t_run: 300 # 1800 # 300 # 400 # 00
+t_run: 100 #10 #300 # 1800 # 300 # 400 # 00
 t_equil: 0
 t_snapshot: 0.1
 dynamic_equil_window: -1 
@@ -14,7 +14,7 @@ filaments:
   radius: 12.5
   site_size: 8.2
   n_bd_per_kmc: 10
-  n_sites: [5000]
+  n_sites: [1000]
   polarity: [0]
   x_initial: [0]
   y_initial: [0]
@@ -32,7 +32,7 @@ motors:
   neighb_neighb_energy: 0.0 # 1.6 # 1.75 # 1.6
   t_active: 0
   k_on: 0.00358 # 0.00358 # 0.0179 # 0.00358 # 0.00179 # 0.000358 # x1.4
-  c_bulk: 1 # 100 #0.189 # 10 # 18.9 # # 200 # 0 # 0.05
+  c_bulk: 0 #10 # 100 #0.189 # 10 # 18.9 # # 200 # 0 # 0.05
   c_eff_bind: 1000000 # 4000000
   k_on_ATP: 2500
   c_ATP: 2
@@ -52,11 +52,18 @@ motors:
   r_0: 120
   k_spring: 0.1325
   k_slack: 0.0265
+altMAPs:
+  neighb_neighb_energy: 0.2 # 1.75 # 75 # 2.25
+  k_on: 0.00238 # x10
+  c_bulk: 1 # 100 # 50 # 0
+  k_off_i: 0.01 # 0.143 
+  d_i: 0.0131 # 0.131 # /10
+  d_side: 0.0393 # 0.131 # 0.0131 # 0.0 # 0.000131
 xlinks:
   neighb_neighb_energy: 0.2 # 1.75 # 75 # 2.25
   t_active: 0
   k_on: 0.00238 # x10
-  c_bulk: 0 #1 # 100 # 50 # 0
+  c_bulk: 1 #1 # 100 # 50 # 0
   c_eff_bind: 5000
   k_off_i: 0.01 # 0.143 
   k_off_ii: 0.0143

@@ -19,6 +19,7 @@ protected:
 public:
   Reservoir<Motor> motors_;
   Reservoir<Protein> xlinks_;
+  Reservoir<Protein> altMAPs_;
   EventManager kmc_;
 
 protected:

@@ -30,6 +30,13 @@ void ProteinManager::GenerateReservoirs() {
   }
   // Initialize the crosslinker reservoir
   xlinks_.Initialize(_id_xlink, reservoir_size, xlink_step_active);
+  // Convert t_active parameter from seconds to number of simulation timesteps
+  size_t altMAP_step_active{0};
+  if (Params::AltMAPs::c_bulk == 0.0) {
+    altMAP_step_active = std::numeric_limits<size_t>::max();
+  }
+  // Initialize the crosslinker reservoir
+  altMAPs_.Initialize(_id_altMAP, reservoir_size, altMAP_step_active);
 }
 
 void ProteinManager::InitializeWeights() {
@@ -77,6 +84,7 @@ void ProteinManager::InitializeWeights() {
   Sys::weight_neighb_unbind_.resize(_n_neighbs_max + 1);
   motors_.AddWeight("neighbs", _n_neighbs_max + 1);
   xlinks_.AddWeight("neighbs", _n_neighbs_max + 1);
+  altMAPs_.AddWeight("neighbs", _n_neighbs_max + 1);
   double dE{0.0};
   for (int n_neighbs{0}; n_neighbs <= _n_neighbs_max; n_neighbs++) {
     dE = -1 * Params::Motors::neighb_neighb_energy * n_neighbs;
@@ -89,6 +97,11 @@ void ProteinManager::InitializeWeights() {
     dE = -1 * Params::Xlinks::neighb_neighb_energy * n_neighbs;
     xlinks_.weights_[name].bind_[n_neighbs] = exp(-(1.0 - _lambda_neighb) * dE);
     xlinks_.weights_[name].unbind_[n_neighbs] = exp(_lambda_neighb * dE);
+    // ! FIXME generalize w/o use of Sys namespace
+    dE = -1 * Params::AltMAPs::neighb_neighb_energy * n_neighbs;
+    altMAPs_.weights_[name].bind_[n_neighbs] =
+        exp(-(1.0 - _lambda_neighb) * dE);
+    altMAPs_.weights_[name].unbind_[n_neighbs] = exp(_lambda_neighb * dE);
   }
   // for (int n_neighbs{0}; n_neighbs <= _n_neighbs_max; n_neighbs++) {
   //   printf("bind: %g (%i neighbs)\n",
@@ -145,6 +158,8 @@ void ProteinManager::SetParameters() {
   // Bind I
   motors_.AddProb("bind_i", Motors::k_on * Motors::c_bulk * dt);
   xlinks_.AddProb("bind_i", Xlinks::k_on * Xlinks::c_bulk * dt, "neighbs", 0);
+  altMAPs_.AddProb("bind_i", AltMAPs::k_on * AltMAPs::c_bulk * dt, "neighbs",
+                   0);
   // Bind_ATP_I -- motors only
   double p_bind_ATP{Motors::k_on_ATP * Motors::c_ATP * dt};
   double wt_ATP_i{1.0};
@@ -183,6 +198,7 @@ void ProteinManager::SetParameters() {
   }
   motors_.AddProb("unbind_i", Motors::k_off_i * dt * wt_unbind_i);
   xlinks_.AddProb("unbind_i", Xlinks::k_off_i * dt, "neighbs", 1);
+  altMAPs_.AddProb("unbind_i", AltMAPs::k_off_i * dt, "neighbs", 1);
   if (Params::Filaments::n_subfilaments > 1) {
     double p_bind_i{Xlinks::k_on * Xlinks::c_bulk * dt};
     // printf("p_base = %g\n", p_bind_i);
@@ -203,6 +219,19 @@ void ProteinManager::SetParameters() {
     // }
     xlinks_.AddProb("bind_i_multi", p_bind);
     xlinks_.AddProb("unbind_i_multi", p_unbind);
+  }
+  if (Params::Filaments::n_subfilaments > 1) {
+    double p_bind_i{AltMAPs::k_on * AltMAPs::c_bulk * dt};
+    double p_unbind_i{AltMAPs::k_off_i * dt};
+    Vec3D<double> p_bind{{Vec<double>(2 * _n_neighbs_max + 1, p_bind_i)}};
+    Vec3D<double> p_unbind{{Vec<double>(2 * _n_neighbs_max + 1, p_unbind_i)}};
+    for (int n_neighbs{0}; n_neighbs <= 2 * _n_neighbs_max; n_neighbs++) {
+      double dE{-1 * Params::AltMAPs::neighb_neighb_energy * n_neighbs};
+      p_bind[0][0][n_neighbs] *= exp(-(1.0 - _lambda_neighb) * dE);
+      p_unbind[0][0][n_neighbs] *= exp(_lambda_neighb * dE);
+    }
+    altMAPs_.AddProb("bind_i_multi", p_bind);
+    altMAPs_.AddProb("unbind_i_multi", p_unbind);
   }
   // Diffusion -- xlinks only
   double x_sq{Square(Filaments::site_size / 1000)}; // in um^2
@@ -296,6 +325,49 @@ void ProteinManager::SetParameters() {
       xlinks_.AddProb("diffuse_side_up", p_diff_side);
       xlinks_.AddProb("diffuse_side_down", p_diff_side);
     }
+  }
+  tau_i = x_sq / (2 * AltMAPs::d_i);
+  tau_side = x_sq / (2 * AltMAPs::d_side);
+  p_diffuse_i = dt / tau_i;
+  p_diffuse_side = dt / tau_side;
+  // diff_fwd and diff_bck are two separate events, which effectively
+  // doubles the probability to diffuse. Thus we divide p_diff by 2.
+  p_diffuse_i /= 2.0;
+  p_diffuse_ii /= 2.0;
+  p_diffuse_side /= 2.0;
+  if (Params::Filaments::n_subfilaments == 1) {
+    Vec3D<double> p_diff{{Vec<double>(_n_neighbs_max + 1, p_diffuse_i)}};
+    p_diff[0][0][1] *= altMAPs_.weights_.at("neighbs").unbind_[1];
+    p_diff[0][0][2] *= 0.0;
+    altMAPs_.AddProb("diffuse_i_fwd", p_diff);
+    altMAPs_.AddProb("diffuse_i_bck", p_diff);
+  } else {
+    size_t vec_size{_n_neighbs_max + 1};
+    Vec3D<double> p_diff_same{
+        {Vec2D<double>(vec_size, Vec<double>(vec_size, p_diffuse_i))}};
+    Vec3D<double> p_diff_side{
+        {Vec2D<double>(vec_size, Vec<double>(vec_size, p_diffuse_side))}};
+    // Scan over n_neighbors along same protofilament
+    for (int n_same{0}; n_same <= _n_neighbs_max; n_same++) {
+      // Scan over n_neighbors along adjacent protofilaments
+      for (int n_side{0}; n_side <= _n_neighbs_max; n_side++) {
+        double tot_weight{altMAPs_.weights_.at("neighbs").unbind_[n_same] *
+                          altMAPs_.weights_.at("neighbs").unbind_[n_side]};
+        p_diff_same[0][n_side][n_same] *= tot_weight;
+        p_diff_side[0][n_side][n_same] *= tot_weight;
+        // With max neighbs in respective dimensions, cannot diffuse
+        if (n_same == _n_neighbs_max) {
+          p_diff_same[0][n_side][n_same] *= 0.0;
+        }
+        if (n_side == _n_neighbs_max) {
+          p_diff_side[0][n_side][n_same] *= 0.0;
+        }
+      }
+    }
+    altMAPs_.AddProb("diffuse_i_fwd", p_diff_same);
+    altMAPs_.AddProb("diffuse_i_bck", p_diff_same);
+    altMAPs_.AddProb("diffuse_side_up", p_diff_side);
+    altMAPs_.AddProb("diffuse_side_down", p_diff_side);
   }
   xlinks_.AddProb("diffuse_ii_to_rest", p_diffuse_ii);
   xlinks_.AddProb("diffuse_ii_fr_rest", p_diffuse_ii);
@@ -449,6 +521,15 @@ void ProteinManager::InitializeEvents() {
                          entry->GetNumNeighborsOccupied_Xlink_Side()};
     return indices_vec;
   };
+  auto get_n_neighbs_altMAP = [](Object *entry) {
+    Vec<int> indices_vec{entry->GetNumNeighborsOccupied_AltMAP()};
+    return indices_vec;
+  };
+  auto get_n_neighbs_altMAP_tot = [](Object *entry) {
+    Vec<int> indices_vec{entry->GetNumNeighborsOccupied_AltMAP() +
+                         entry->GetNumNeighborsOccupied_AltMAP_Side()};
+    return indices_vec;
+  };
   /* *** Bind_I *** */
   auto weight_bind_i = [](auto *site) { return site->GetWeight_Bind(); };
   auto exe_bind_i = [&](auto *site, auto *pop, auto *fil) {
@@ -486,15 +567,16 @@ void ProteinManager::InitializeEvents() {
   if (xlinks_.active_) {
     if (Params::Filaments::n_subfilaments == 1) {
       // Add unoccupied site tracker for crosslinkers; segregated by n_neighbs
-      filaments_->AddPop("neighbs", is_unocc, dim_size, i_min,
+      filaments_->AddPop("neighbs_xlink", is_unocc, dim_size, i_min,
                          get_n_neighbs_xlink);
       // Create a binomial event for each n_neighb possibility
       for (int n_neighbs{0}; n_neighbs <= _n_neighbs_max; n_neighbs++) {
         kmc_.events_.emplace_back(
             "bind_i_" + std::to_string(n_neighbs) + " (xlinks)",
             xlinks_.p_event_.at("bind_i").GetVal(n_neighbs),
-            &filaments_->unoccupied_.at("neighbs").bin_size_[0][0][n_neighbs],
-            &filaments_->unoccupied_.at("neighbs")
+            &filaments_->unoccupied_.at("neighbs_xlink")
+                 .bin_size_[0][0][n_neighbs],
+            &filaments_->unoccupied_.at("neighbs_xlink")
                  .bin_entries_[0][0][n_neighbs],
             binomial, [&](Object *base) {
               return exe_bind_i(dynamic_cast<BindingSite *>(base), &xlinks_,
@@ -502,18 +584,55 @@ void ProteinManager::InitializeEvents() {
             });
       }
     } else {
-      filaments_->AddPop("neighbs_tot", is_unocc, dim_size_tot, i_min,
+      filaments_->AddPop("neighbs_xlink_tot", is_unocc, dim_size_tot, i_min,
                          get_n_neighbs_xlink_tot);
       for (int n_neighbs{0}; n_neighbs <= 2 * _n_neighbs_max; n_neighbs++) {
         kmc_.events_.emplace_back(
             "bind_i_" + std::to_string(n_neighbs) + " (xlinks)",
             xlinks_.p_event_.at("bind_i_multi").GetVal(n_neighbs),
-            &filaments_->unoccupied_.at("neighbs_tot")
+            &filaments_->unoccupied_.at("neighbs_xlink_tot")
                  .bin_size_[0][0][n_neighbs],
-            &filaments_->unoccupied_.at("neighbs_tot")
+            &filaments_->unoccupied_.at("neighbs_xlink_tot")
                  .bin_entries_[0][0][n_neighbs],
             binomial, [&](Object *base) {
               return exe_bind_i(dynamic_cast<BindingSite *>(base), &xlinks_,
+                                filaments_);
+            });
+      }
+    }
+  }
+  if (altMAPs_.active_) {
+    if (Params::Filaments::n_subfilaments == 1) {
+      // Add unoccupied site tracker for crosslinkers; segregated by n_neighbs
+      filaments_->AddPop("neighbs_altMAP", is_unocc, dim_size, i_min,
+                         get_n_neighbs_altMAP);
+      // Create a binomial event for each n_neighb possibility
+      for (int n_neighbs{0}; n_neighbs <= _n_neighbs_max; n_neighbs++) {
+        kmc_.events_.emplace_back(
+            "bind_i_" + std::to_string(n_neighbs) + " (altMAPs)",
+            altMAPs_.p_event_.at("bind_i").GetVal(n_neighbs),
+            &filaments_->unoccupied_.at("neighbs_altMAP")
+                 .bin_size_[0][0][n_neighbs],
+            &filaments_->unoccupied_.at("neighbs_altmAP")
+                 .bin_entries_[0][0][n_neighbs],
+            binomial, [&](Object *base) {
+              return exe_bind_i(dynamic_cast<BindingSite *>(base), &altMAPs_,
+                                filaments_);
+            });
+      }
+    } else {
+      filaments_->AddPop("neighbs_altMAP_tot", is_unocc, dim_size_tot, i_min,
+                         get_n_neighbs_altMAP_tot);
+      for (int n_neighbs{0}; n_neighbs <= 2 * _n_neighbs_max; n_neighbs++) {
+        kmc_.events_.emplace_back(
+            "bind_i_" + std::to_string(n_neighbs) + " (altMAPs)",
+            altMAPs_.p_event_.at("bind_i_multi").GetVal(n_neighbs),
+            &filaments_->unoccupied_.at("neighbs_altMAP_tot")
+                 .bin_size_[0][0][n_neighbs],
+            &filaments_->unoccupied_.at("neighbs_altMAP_tot")
+                 .bin_entries_[0][0][n_neighbs],
+            binomial, [&](Object *base) {
+              return exe_bind_i(dynamic_cast<BindingSite *>(base), &altMAPs_,
                                 filaments_);
             });
       }
@@ -640,6 +759,37 @@ void ProteinManager::InitializeEvents() {
             &xlinks_.sorted_.at("bound_i").bin_entries_[0][0][n_neighbs],
             binomial, [&](Object *base) {
               return exe_unbind_i(dynamic_cast<BindingHead *>(base), &xlinks_,
+                                  &motors_, filaments_);
+            });
+      }
+    }
+  }
+  if (altMAPs_.active_) {
+    if (Params::Filaments::n_subfilaments == 1) {
+      altMAPs_.AddPop("bound_i", is_bound_i, dim_size, i_min,
+                      get_n_neighbs_altMAP);
+      for (int n_neighbs{0}; n_neighbs <= _n_neighbs_max; n_neighbs++) {
+        kmc_.events_.emplace_back(
+            "unbind_i_" + std::to_string(n_neighbs) + " (altMAPs)",
+            altMAPs_.p_event_.at("unbind_i").GetVal(n_neighbs),
+            &altMAPs_.sorted_.at("bound_i").bin_size_[0][0][n_neighbs],
+            &altMAPs_.sorted_.at("bound_i").bin_entries_[0][0][n_neighbs],
+            binomial, [&](Object *base) {
+              return exe_unbind_i(dynamic_cast<BindingHead *>(base), &altMAPs_,
+                                  &motors_, filaments_);
+            });
+      }
+    } else {
+      altMAPs_.AddPop("bound_i", is_bound_i, dim_size_tot, i_min,
+                      get_n_neighbs_altMAP_tot);
+      for (int n_neighbs{0}; n_neighbs <= 2 * _n_neighbs_max; n_neighbs++) {
+        kmc_.events_.emplace_back(
+            "unbind_i_" + std::to_string(n_neighbs) + " (altMAPs)",
+            altMAPs_.p_event_.at("unbind_i_multi").GetVal(n_neighbs),
+            &altMAPs_.sorted_.at("bound_i").bin_size_[0][0][n_neighbs],
+            &altMAPs_.sorted_.at("bound_i").bin_entries_[0][0][n_neighbs],
+            binomial, [&](Object *base) {
+              return exe_unbind_i(dynamic_cast<BindingHead *>(base), &altMAPs_,
                                   &motors_, filaments_);
             });
       }
@@ -871,6 +1021,123 @@ void ProteinManager::InitializeEvents() {
           });
     }
   }
+  if (altMAPs_.active_) {
+    // Diffusion
+    auto exe_diff = [](auto *head, auto *pop, auto *fil, int dir) {
+      bool executed{head->Diffuse(dir)};
+      if (executed) {
+        pop->FlagForUpdate();
+        fil->FlagForUpdate();
+        bool still_attached{head->parent_->UpdateExtension()};
+        // TODO do I need this check??
+        if (!still_attached) {
+          // printf("what\n");
+        }
+      }
+      return executed;
+    };
+    // Simple 1-D binomial for single-PF diffusion
+    if (Params::Filaments::n_subfilaments == 1) {
+      for (int n_neighbs{0}; n_neighbs < _n_neighbs_max; n_neighbs++) {
+        kmc_.events_.emplace_back(
+            "diffuse_i_" + std::to_string(n_neighbs) + "_fwd (altMAPs)",
+            altMAPs_.p_event_.at("diffuse_i_fwd").GetVal(n_neighbs),
+            &altMAPs_.sorted_.at("bound_i").bin_size_[0][0][n_neighbs],
+            &altMAPs_.sorted_.at("bound_i").bin_entries_[0][0][n_neighbs],
+            binomial, [&](Object *base) {
+              return exe_diff(dynamic_cast<BindingHead *>(base), &altMAPs_,
+                              filaments_, 1);
+            });
+        kmc_.events_.emplace_back(
+            "diffuse_i_" + std::to_string(n_neighbs) + "_bck (altMAPs)",
+            altMAPs_.p_event_.at("diffuse_i_bck").GetVal(n_neighbs),
+            &altMAPs_.sorted_.at("bound_i").bin_size_[0][0][n_neighbs],
+            &altMAPs_.sorted_.at("bound_i").bin_entries_[0][0][n_neighbs],
+            binomial, [&](Object *base) {
+              return exe_diff(dynamic_cast<BindingHead *>(base), &altMAPs_,
+                              filaments_, -1);
+            });
+        // SIDE STEP DIFFUSION
+      }
+    }
+    // If we have multiple PFs, need to account for neighbs in different dims.
+    else {
+      // For multi-PF diffusion, need to segregate neighbors on same PF versus
+      // adjacent PFs, so we just pad i
+      Vec<size_t> dim_size_multi{1, _n_neighbs_max + 1, _n_neighbs_max + 1};
+      auto get_n_neighbs_multi = [](Object *entry) {
+        Vec<int> indices_vec{entry->GetNumNeighborsOccupied_AltMAP(),
+                             entry->GetNumNeighborsOccupied_AltMAP_Side()};
+        return indices_vec;
+      };
+      auto exe_diff_side = [](auto *head, auto *pop, auto *fil, int dir) {
+        bool executed{head->Diffuse_Side(dir)};
+        if (executed) {
+          pop->FlagForUpdate();
+          fil->FlagForUpdate();
+        }
+        return executed;
+      };
+      altMAPs_.AddPop("bound_i_multi", is_bound_i, dim_size_multi, i_min,
+                      get_n_neighbs_multi);
+      for (int n_same{0}; n_same <= _n_neighbs_max; n_same++) {
+        for (int n_side{0}; n_side <= _n_neighbs_max; n_side++) {
+          Str neighb_label{std::to_string(n_side) + "_" +
+                           std::to_string(n_same)};
+          if (n_same != _n_neighbs_max) {
+            kmc_.events_.emplace_back(
+                "diffuse_i_fwd_" + neighb_label + " (altMAPs)",
+                altMAPs_.p_event_.at("diffuse_i_fwd").GetVal(n_side, n_same),
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_size_[0][n_side][n_same],
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_entries_[0][n_side][n_same],
+                binomial, [&](Object *base) {
+                  return exe_diff(dynamic_cast<BindingHead *>(base), &altMAPs_,
+                                  filaments_, 1);
+                });
+            kmc_.events_.emplace_back(
+                "diffuse_i_bck_" + neighb_label + " (altMAPs)",
+                altMAPs_.p_event_.at("diffuse_i_bck").GetVal(n_side, n_same),
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_size_[0][n_side][n_same],
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_entries_[0][n_side][n_same],
+                binomial, [&](Object *base) {
+                  return exe_diff(dynamic_cast<BindingHead *>(base), &altMAPs_,
+                                  filaments_, -1);
+                });
+          }
+          // SIDE STEP DIFFUSION
+          if (n_side != _n_neighbs_max) {
+            kmc_.events_.emplace_back(
+                "diffuse_i_up_" + neighb_label + " (altMAPs)",
+                altMAPs_.p_event_.at("diffuse_side_up").GetVal(n_side, n_same),
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_size_[0][n_side][n_same],
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_entries_[0][n_side][n_same],
+                binomial, [&](Object *base) {
+                  return exe_diff_side(dynamic_cast<BindingHead *>(base),
+                                       &altMAPs_, filaments_, 1);
+                });
+            kmc_.events_.emplace_back(
+                "diffuse_i_down_" + neighb_label + " (altMAPs)",
+                altMAPs_.p_event_.at("diffuse_side_down")
+                    .GetVal(n_side, n_same),
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_size_[0][n_side][n_same],
+                &altMAPs_.sorted_.at("bound_i_multi")
+                     .bin_entries_[0][n_side][n_same],
+                binomial, [&](Object *base) {
+                  return exe_diff_side(dynamic_cast<BindingHead *>(base),
+                                       &altMAPs_, filaments_, -1);
+                });
+          }
+        }
+      }
+    }
+  }
 }
 
 void ProteinManager::RunKMC() {
@@ -881,11 +1148,13 @@ void ProteinManager::RunKMC() {
   UpdateFilaments();
   motors_.PrepForKMC();
   xlinks_.PrepForKMC();
+  altMAPs_.PrepForKMC();
   // Sys::Log(1, "BEGIN KMC EVENTS\n");
   bool event_executed{kmc_.ExecuteEvents()};
   if (event_executed) {
     motors_.FlagForUpdate();
     xlinks_.FlagForUpdate();
+    altMAPs_.FlagForUpdate();
     filaments_->FlagForUpdate();
   }
   // UpdateExtensions();

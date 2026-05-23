@@ -36,6 +36,8 @@ public:
   virtual int GetNumNeighborsOccupied_Tot_Side();
   virtual int GetNumNeighborsOccupied_Xlink();
   virtual int GetNumNeighborsOccupied_Xlink_Side();
+  virtual int GetNumNeighborsOccupied_AltMAP();
+  virtual int GetNumNeighborsOccupied_AltMAP_Side();
   virtual int GetNumNeighborsOccupied_Motor();
   virtual int GetNumNeighborsOccupied_Motor_Side();
 

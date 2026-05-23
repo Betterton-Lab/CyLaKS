@@ -22,7 +22,7 @@ rm -rf ~/.cache
 mkdir /build
 cd /build
 
-git clone --recursive --single-branch --branch multiPF https://github.com/Betterton-Lab/CyLaKS.git
+git clone --recursive --single-branch --branch add_alt_MAP https://github.com/Betterton-Lab/CyLaKS.git
 cd CyLaKS
 ./install.sh -I
 rm -rf /build

@@ -23,6 +23,14 @@ int BindingHead::GetNumNeighborsOccupied_Xlink_Side() {
   return site_->GetNumNeighborsOccupied_Xlink_Side();
 }
 
+int BindingHead::GetNumNeighborsOccupied_AltMAP() {
+  return site_->GetNumNeighborsOccupied_AltMAP();
+}
+
+int BindingHead::GetNumNeighborsOccupied_AltMAP_Side() {
+  return site_->GetNumNeighborsOccupied_AltMAP_Side();
+}
+
 int BindingHead::GetNumNeighborsOccupied_Motor() {
   return site_->GetNumNeighborsOccupied_Motor();
 }

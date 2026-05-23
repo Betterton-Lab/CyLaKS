@@ -62,6 +62,16 @@ inline double k_spring;        // Spring constant of tether; pN/nm
 inline double k_slack;         // '' but when shorter than rest length
 
 }; // namespace Motors
+namespace AltMAPs {
+inline double neighb_neighb_energy; // Energy between two PRC1 neighbors
+inline double k_on;                 // Bulk binding rate;  1/(nM*s)
+inline double c_bulk;               // Bulk concentration; nM
+inline double k_off_i;              // Unbinding rate while singly-bound;  1/s
+inline double d_i;                  // Diffusion coefficient; um^2/s
+inline double d_side; // Diffusion coefficient; um^2/s (side-stepping)
+
+}; // namespace AltMAPs
+
 namespace Xlinks {
 inline double neighb_neighb_energy; // Energy between two PRC1 neighbors
 inline double t_active;             // Time at which crosslinkers flow in; s

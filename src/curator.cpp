@@ -354,6 +354,14 @@ void Curator::ParseParameters() {
   ParseYAML(&Motors::r_0, "motors.r_0", "nm");
   ParseYAML(&Motors::k_spring, "motors.k_spring", "pN/nm");
   ParseYAML(&Motors::k_slack, "motors.k_slack", "pN/nm");
+  Sys::Log("  Crosslinker (altMAP) parameters:\n");
+  ParseYAML(&AltMAPs::neighb_neighb_energy, "altMAPs.neighb_neighb_energy",
+            "kBT");
+  ParseYAML(&AltMAPs::k_on, "altMAPs.k_on", "1/nM*s");
+  ParseYAML(&AltMAPs::c_bulk, "altMAPs.c_bulk", "nM");
+  ParseYAML(&AltMAPs::k_off_i, "altMAPs.k_off_i", "1/s");
+  ParseYAML(&AltMAPs::d_i, "altMAPs.d_i", "um^2/s");
+  ParseYAML(&AltMAPs::d_side, "altMAPs.d_side", "um^2/s");
   Sys::Log("  Crosslinker (xlink) parameters:\n");
   ParseYAML(&Xlinks::neighb_neighb_energy, "xlinks.neighb_neighb_energy",
             "kBT");
@@ -434,6 +442,7 @@ void Curator::GenerateDataFiles() {
   bool motors_tethering{proteins_.motors_.tethering_active_};
   bool xlinks_active{proteins_.xlinks_.active_};
   bool xlinks_crosslinking{proteins_.xlinks_.crosslinking_active_};
+  bool altMAPs_active{proteins_.altMAPs_.active_};
   if (!Sys::test_mode_.empty()) {
     motors_active = test_proteins_.motors_.active_;
     motors_tethering = test_proteins_.motors_.tethering_active_;
@@ -443,7 +452,7 @@ void Curator::GenerateDataFiles() {
   // Open filament pos file, which stores the N-dim coordinates of the two
   // endpoints of each filament every datapoint
   AddDataFile("filament_pos");
-  if (motors_active or xlinks_active) {
+  if (motors_active or xlinks_active or altMAPs_active) {
     // Open occupancy file, which stores the species ID of each occupant
     // (or -1 for none) for all MT sites during data collection (DC)
     AddDataFile("occupancy");
@@ -567,6 +576,7 @@ void Curator::OutputData() {
   bool motors_tethering{proteins_.motors_.tethering_active_};
   bool xlinks_active{proteins_.xlinks_.active_};
   bool xlinks_crosslinking{proteins_.xlinks_.crosslinking_active_};
+  bool altMAPs_active{proteins_.altMAPs_.active_};
   if (!Sys::test_mode_.empty()) {
     n_pfs = test_filaments_.protofilaments_.size();
     motors_active = test_proteins_.motors_.active_;
@@ -594,7 +604,7 @@ void Curator::OutputData() {
     }
     data_files_.at("filament_pos").Write(coord1, _n_dims_max);
     data_files_.at("filament_pos").Write(coord2, _n_dims_max);
-    if (!motors_active and !xlinks_active) {
+    if (!motors_active and !xlinks_active and !altMAPs_active) {
       continue;
     }
     int occupancy[n_sites_max_];

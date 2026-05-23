@@ -32,7 +32,6 @@ public:
   // int GetNumNeighborsOccupied_Xlink_Side();
   int GetNumNeighborsOccupied_Motor();
   // int GetNumNeighborsOccupied_Motor_Side();
-  ;
 
   int GetNumHeadsActive();
   bool Trailing() { return trailing_; }

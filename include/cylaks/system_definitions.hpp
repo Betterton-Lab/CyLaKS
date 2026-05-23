@@ -24,6 +24,7 @@ inline static const double _lambda_neighb{1.0};
 inline static const size_t _id_site{0};
 inline static const size_t _id_xlink{1};
 inline static const size_t _id_motor{2};
+inline static const size_t _id_altMAP{3};
 /* Protein size constants; in nm */
 inline static const double _r_site{8.0};
 inline static const double _r_xlink_head{4.0};
