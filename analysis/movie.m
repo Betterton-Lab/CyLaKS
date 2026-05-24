@@ -12,13 +12,14 @@ sim_name = 'out_final_motorVelWeighted/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_moto
 sim_name = 'out_final_johann/shep_0.042nM_2.8nM_1_500_0.0kT_3x_5x_0';
 sim_name = 'out_final_johann_long5e-5/shep_0.042nM_2.8nM_1_500_0.0kT_5e-5_0';
 sim_name = 'test';
+sim_name = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_0.3_0.3_0'
 
 output_movie_name = 'test';
 
 start_frame = 1; %250;
 end_frame = -1;  % set to -1 to run until end of data
 
-frames_per_plot = 100; %1000; 
+frames_per_plot = 1000; %1000; 
 movie_duration = 60; % in seconds
 
 % Load parameter structure

@@ -4,12 +4,14 @@ clear variables;
 %file_dir = "../";%out_final_xlinkOnlyLong";
 %sim_name = 'out_final_motorVelWeighted2/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_1x_1x'
 %output_folder = 'kymo_output_motorVelocityWeighted2';
-output_folder = 'kymo_output_noCoop';
+%output_folder = 'kymo_output_noCoop';
+output_folder = 'kymo_output_altMAPs_round1';
 subfilaments = true; 
 
 %
 %file_dir = '../out_final_motorVelWeighted2';
-file_dir = '../out_final_noCoop';
+%file_dir = '../out_final_noCoop';
+file_dir = '../out_altMAPs_round1/';
 %output_folder = '.';
 %name_format = 'shep_%gnM_%gnM_8_%i_0.6kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_%gnM_8_%i_0.6kT_3x_5x_%i_motor_%gx';
@@ -19,9 +21,11 @@ file_dir = '../out_final_noCoop';
 %name_format = 'shep_0.1nM_50nM_%i_1000_1.2kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_%gx_%gx';
 %name_format = 'shep_%gnM_%inM_8_1000_0.0kT_3x_5x';
-sim_name = 'shep_0.1nM_10nM_8_1000_0.0kT_3x_5x_0';
+%sim_name = 'shep_0.1nM_10nM_8_1000_0.0kT_3x_5x_0';
+%sim_name = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_0.3_0.3_0'
+name_format = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_%g_%g_0';
 
-%{
+
 %vars_one = [0.1, 1];
 %vars_one = [0.75];
 %vars_one = [10, 30, 100];
@@ -30,9 +34,11 @@ sim_name = 'shep_0.1nM_10nM_8_1000_0.0kT_3x_5x_0';
 %vars_two = [1, 10, 50, 100, 250, 500, 1000];
 %vars_two = [30]
 %vars_two = [1000];
-vars_one = [0.1, 0.3, 1, 3, 10]; %vars_one = [1];
+%vars_one = [0.1, 0.3, 1, 3, 10]; %vars_one = [1];
+vars_one = [0.3, 1, 3];
+vars_two = [0.3, 1, 3];
 %vars_two = [0.1, 0.3, 1, 3, 10];
-vars_two = [0.1, 0.3, 1, 3, 10, 30]; %vars_two = [1];
+%vars_two = [0.1, 0.3, 1, 3, 10, 30]; %vars_two = [1];
 seeds = [0];%, 1, 2, 3, 4, 5]; 
 %vars_tri = [1000];
 %vars_tri = [0.1, 0.3, 3, 10]; 
@@ -62,10 +68,12 @@ i_start = 1;
 i_end = -1; 
 frac_visible_xlink = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 frac_visible_motor = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
+frac_visible_altMAP = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 
 tubulin_intensity = 0.0; % 0.01;
 xlink_intensity = 0.003; %0.05;  % Controls how bright a single xlink is; 0.003 for 0.1 nM
 motor_intensity = 0.0008; %0.0015;  % ditto but for motors; 0.0008 for 100 nM
+altMAP_intensity = xlink_intensity;
 
 % Scale bar lengths 
 scale_x = 2; %5; %2.5; %1; % microns
@@ -85,6 +93,10 @@ intensityMax = gaussAmp/2 + bkgLevel;
 
 params = load_parameters(sprintf('%s/%s', file_dir, sim_name));
 
+if params.n_datapoints == 0
+    continue
+end
+
 % Open data files 
 filament_filename = sprintf('%s/%s_filament_pos.file', file_dir, sim_name);
 filament_pos = zeros(params.n_dims, 2, params.n_mts, params.n_datapoints);
@@ -101,6 +113,7 @@ occupancy = load_data(occupancy, occupancy_filename, '*int');
 site_ID = 0;
 xlink_ID = 1;
 motor_ID = 2;
+altMAP_ID = 3;
 %disp(params.n_mts)
 if i_end == -1
     i_end = params.n_datapoints;
@@ -112,6 +125,7 @@ site_matrix = zeros(params.max_sites, params.n_mts, params.n_datapoints);
 % Get motor and xlink matrices from occupancy data
 motor_matrix = zeros(params.max_sites, params.n_mts, params.n_datapoints); % from protein_ids;
 xlink_matrix = zeros(params.max_sites, params.n_mts, params.n_datapoints); % from protein_ids;
+altMAP_matrix = zeros(params.max_sites, params.n_mts, params.n_datapoints); % from protein_ids;
 for i_data = 1 : params.n_datapoints
     for i_mt = 1 : params.n_mts
         for i_site = 1 : params.mt_lengths(i_mt)
@@ -124,6 +138,10 @@ for i_data = 1 : params.n_datapoints
             elseif sid == motor_ID
                 if mod(frac_visible_motor(1)*id, frac_visible_motor(2)) == 0
                     motor_matrix(i_site, i_mt, i_data) = motor_intensity;
+                end
+            elseif sid == altMAP_ID
+                if mod(frac_visible_altMAP(1)*id, frac_visible_altMAP(2)) == 0
+                    altMAP_matrix(i_site, i_mt, i_data) = altMAP_intensity;
                 end
             end
         end
@@ -164,6 +182,8 @@ end
 
 final_img_motors = zeros(pixels_y, pixels_x, 3); % RGB image; 
 final_img_xlinks = zeros(pixels_y, pixels_x, 3); % RGB image; 
+final_img_altMAPs = zeros(pixels_y, pixels_x, 3); % RGB image; 
+final_img_twoMAPs = zeros(pixels_y, pixels_x, 3); % RGB image; 
 final_img_combined = zeros(pixels_y, pixels_x, 3); % RGB image; 
 % Run through data and create each line of kymograph step-by-step
 for i_data = i_start : dwell_steps : i_end - dwell_steps
@@ -220,6 +240,7 @@ for i_data = i_start : dwell_steps : i_end - dwell_steps
     else
         dataMatrixMotors = sum(motor_matrix(:, :, i_data:i_data + dwell_steps), [2 3])'/params.n_mts;
         dataMatrixXlinks = sum(xlink_matrix(:, :, i_data:i_data + dwell_steps), [2 3])'/params.n_mts;
+        dataMatrixAltMAPs = sum(altMAP_matrix(:, :, i_data:i_data + dwell_steps), [2 3])'/params.n_mts;
         lineMatrix = sum(site_matrix(:, :, i_data:i_data + dwell_steps), [2 3])';
     end
     
@@ -241,18 +262,28 @@ for i_data = i_start : dwell_steps : i_end - dwell_steps
         gaussSigma,gaussAmp,bkgLevel,noiseStd,doPlot);  
     imageXlinks = imageXlinks + ones(size(imageXlinks))*bkgLevel + randn(size(imageXlinks))*noiseStd;
     imageXlinks = imageXlinks/intensityMax;
+    
+    % altMAPs - green channel 
+    imageAltMAPs = imageGaussianOverlapSlice(dataMatrixAltMAPs,siteLength,pixelLength,pixelPad,...
+        gaussSigma,gaussAmp,bkgLevel,noiseStd,doPlot);  
+    imageAltMAPs = imageAltMAPs + ones(size(imageAltMAPs))*bkgLevel + randn(size(imageAltMAPs))*noiseStd;
+    imageAltMAPs = imageAltMAPs/intensityMax;
 
     % merge into RGB image
     imageNull = zeros(size(imageLine));
 
     imageRGB_motor = cat(3, imageMotors, imageNull, imageMotors);
     imageRGB_xlink = cat(3, imageNull, imageXlinks, imageNull);
-    imageRGB_combined = cat(3, imageLine + imageMotors, imageXlinks, imageMotors);
+    imageRGB_altMAP = cat(3, imageNull, imageNull, imageAltMAPs);
+    imageRGB_combined = cat(3, imageLine + imageMotors, imageXlinks, imageMotors + imageAltMAPs);
+    imageRGB_twoMAPs = cat(3, imageNull, imageXlinks, imageAltMAPs);
     
     index = (i_data - i_start) / dwell_steps + 1;
 
     final_img_motors(index, :, :) = imageRGB_motor;
     final_img_xlinks(index, :, :) = imageRGB_xlink;
+    final_img_altMAPs(index, :, :) = imageRGB_altMAP;
+    final_img_twoMAPs(index, :, :) = imageRGB_twoMAPs;  
     final_img_combined(index, :, :) = imageRGB_combined;
 end
 %} 
@@ -292,6 +323,42 @@ l2 = line([x2 x2],[y2 y2-len_y],'Color','w','LineWidth',4); %tubulin
 set(l,'clipping','off')
 set(l2,'clipping','off')
 
+fig_altMAP = figure;
+set(fig_altMAP, 'Position', [100 50 300 600]);
+axes('Units','Normalize','Position',[0 0 1 1]);
+img2 = imagesc(final_img_altMAPs, [min(final_img_altMAPs, [], 'all') max(final_img_altMAPs, [], 'all')]);
+set(gca,'Xtick',[]); set(gca,'Ytick',[]);
+set(gca, 'Box', 'off');
+% Add scale bars
+len_x = scale_x * 1000 / pixelLength;
+len_y = scale_t / dwell_time;
+x1 = (95/100)*pixels_x;
+x2 = (94.25/100)*pixels_x;
+y1 = (99/100)*pixels_y;
+y2 = (97/100)*pixels_y;
+l = line([x1 x1-len_x],[y1 y1],'Color','w','LineWidth',4); %tubulin
+l2 = line([x2 x2],[y2 y2-len_y],'Color','w','LineWidth',4); %tubulin
+set(l,'clipping','off')
+set(l2,'clipping','off')
+
+fig_twoMAPs = figure;
+set(fig_twoMAPs, 'Position', [100 50 300 600]);
+axes('Units','Normalize','Position',[0 0 1 1]);
+img2 = imagesc(final_img_twoMAPs, [min(final_img_twoMAPs, [], 'all') max(final_img_twoMAPs, [], 'all')]);
+set(gca,'Xtick',[]); set(gca,'Ytick',[]);
+set(gca, 'Box', 'off');
+% Add scale bars
+len_x = scale_x * 1000 / pixelLength;
+len_y = scale_t / dwell_time;
+x1 = (95/100)*pixels_x;
+x2 = (94.25/100)*pixels_x;
+y1 = (99/100)*pixels_y;
+y2 = (97/100)*pixels_y;
+l = line([x1 x1-len_x],[y1 y1],'Color','w','LineWidth',4); %tubulin
+l2 = line([x2 x2],[y2 y2-len_y],'Color','w','LineWidth',4); %tubulin
+set(l,'clipping','off')
+set(l2,'clipping','off')
+
 fig_combined = figure;
 set(fig_combined, 'Position', [150 50 300 600]);
 axes('Units','Normalize','Position',[0 0 1 1]);
@@ -313,15 +380,20 @@ set(l2,'clipping','off')
 
 saveas(fig_motor, sprintf('%s/kymo_%s_%g_%g_motors.png', output_folder, sim_name, xlink_intensity, motor_intensity), 'png');
 saveas(fig_xlink, sprintf('%s/kymo_%s_%g_%g_xlinks.png', output_folder, sim_name, xlink_intensity, motor_intensity), 'png');
-saveas(fig_combined, sprintf('%s/kymo_%s_%g_%g_combo.png', output_folder, sim_name, xlink_intensity, motor_intensity), 'png');
+saveas(fig_altMAP, sprintf('%s/kymo_%s_%g_%g_altMAPs.png', output_folder, sim_name, xlink_intensity, motor_intensity), 'png');
+saveas(fig_twoMAPs, sprintf('%s/kymo_duo_%s_%g_%g.png', output_folder, sim_name, xlink_intensity, motor_intensity), 'png');
+saveas(fig_combined, sprintf('%s/kymo_full_%s_%g_%g.png', output_folder, sim_name, xlink_intensity, motor_intensity), 'png');
 saveas(fig_motor, sprintf('%s/kymo_%s_%g_%g_motors.svg', output_folder, sim_name, xlink_intensity, motor_intensity), 'svg');
 saveas(fig_xlink, sprintf('%s/kymo_%s_%g_%g_xlinks.svg', output_folder, sim_name, xlink_intensity, motor_intensity), 'svg');
-saveas(fig_combined, sprintf('%s/kymo_%s_%g_%g_combo.svg', output_folder, sim_name, xlink_intensity, motor_intensity), 'svg');
+saveas(fig_altMAP, sprintf('%s/kymo_%s_%g_%g_altMAPs.svg', output_folder, sim_name, xlink_intensity, motor_intensity), 'svg');
+saveas(fig_twoMAPs, sprintf('%s/kymo_duo_%s_%g_%g.svg', output_folder, sim_name, xlink_intensity, motor_intensity), 'svg');
+saveas(fig_combined, sprintf('%s/kymo_full_%s_%g_%g.svg', output_folder, sim_name, xlink_intensity, motor_intensity), 'svg');
 close(fig_motor)
 close(fig_xlink)
+close(fig_altMAP)
+close(fig_twoMAPs)
 close(fig_combined)
 
-%{
             end
         end
     end

@@ -16,6 +16,7 @@ sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
 sim_name = 'out_final_johann_altCeff/shep_0.504nM_33.52nM_1_500_0.0kT_altCeff_0';
 %sim_name = 'out_final_johann_altCeff/shep_0.504nM_0.3352nM_1_500_0.0kT_altCeff_0';
 %sim_name = 'out_final_johann_long/shep_0.504nM_0.3352nM_1_500_0.0kT_0';
+sim_name = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_0.3_0.3_0'
 
 output_movie_name = 'out_johann_test'
 
@@ -23,7 +24,7 @@ size_x = 600;
 size_y = 400;
 
 start_frame = 1;
-frames_per_plot = 1000; % in n_datapoints; number of timesteps per output plot
+frames_per_plot = 100; % in n_datapoints; number of timesteps per output plot
 end_frame = 6000;  % set to -1 to run until end of data
 movie_duration = 30; % in seconds
 
@@ -44,23 +45,29 @@ frame_box = [0, 0, size_x, size_y];
 
 xlink_speciesID = 1;
 motor_speciesID = 2;
+altMAP_speciesID = 3;
 
-%colors = get(gca,'colororder');
-%colors = [colors; [0.4940    0.1840    0.5560]; [ 0.2500    0.2500    0.2500]];
+colors = get(gca,'colororder');
+colors = [colors; [0.4940    0.1840    0.5560]; [ 0.2500    0.2500    0.2500]];
 
 xlink_raw_data = occupancy; 
+altMAP_raw_data = occupancy;
 motor_raw_data = occupancy; 
 
 xlink_raw_data(xlink_raw_data ~= xlink_speciesID) = 0;
 xlink_raw_data(xlink_raw_data == xlink_speciesID) = 1;
+altMAP_raw_data(altMAP_raw_data ~= altMAP_speciesID) = 0;
+altMAP_raw_data(altMAP_raw_data == altMAP_speciesID) = 1;
 motor_raw_data(motor_raw_data ~= motor_speciesID) = 0;
 motor_raw_data(motor_raw_data == motor_speciesID) = 1;
 
-xlink_avg_occupancy = zeros([params.max_sites params.n_mts]);
 motor_avg_occupancy = zeros([params.max_sites params.n_mts]);
+xlink_avg_occupancy = zeros([params.max_sites params.n_mts]);
+altMAP_avg_occupancy = zeros([params.max_sites params.n_mts]);
 
 motor_avg_occupancy_tot = zeros([params.max_sites 1]);
 xlink_avg_occupancy_tot = zeros([params.max_sites 1]);
+altMAP_avg_occupancy_tot = zeros([params.max_sites 1]);
 
 fig1 = figure('Position', [50, 250, size_x, size_y]);
 %set(fig1, 'Position', [50, 50, 1200, 300])
@@ -71,26 +78,32 @@ for i = 1:1:int32(params.n_datapoints)
     for i_pf = 1 : 1 : params.n_mts
         motor_avg_occupancy(:, i_pf) = motor_avg_occupancy(:, i_pf) + double(motor_raw_data(:, i_pf, i)) ./ frames_per_plot;
         xlink_avg_occupancy(:, i_pf) = xlink_avg_occupancy(:, i_pf) + double(xlink_raw_data(:, i_pf, i)) ./ frames_per_plot;
+        altMAP_avg_occupancy(:, i_pf) = altMAP_avg_occupancy(:, i_pf) + double(altMAP_raw_data(:, i_pf, i)) ./ frames_per_plot;
         motor_avg_occupancy_tot(:, 1) = motor_avg_occupancy_tot(:, 1) + double(motor_raw_data(:, i_pf, i)) ./ (frames_per_plot * params.n_mts);
         xlink_avg_occupancy_tot(:, 1) = xlink_avg_occupancy_tot(:, 1) + double(xlink_raw_data(:, i_pf, i)) ./ (frames_per_plot * params.n_mts);
+        altMAP_avg_occupancy_tot(:, 1) = altMAP_avg_occupancy_tot(:, 1) + double(altMAP_raw_data(:, i_pf, i)) ./ (frames_per_plot * params.n_mts);
     end
     if (mod(i, frames_per_plot) == 0)
         smooth_window = 32; % should be equivalent to diffraction limit
         motor_occupancy = smoothdata(motor_avg_occupancy, 'movmean', smooth_window);
         xlink_occupancy = smoothdata(xlink_avg_occupancy, 'movmean', smooth_window);
+        altMAP_occupancy = smoothdata(altMAP_avg_occupancy, 'movmean', smooth_window);
         motor_occupancy_tot = smoothdata(motor_avg_occupancy_tot, 'movmean', smooth_window);
-        xlink_occupancy_tot = smoothdata(xlink_avg_occupancy_tot, 'movmean', smooth_window);  
-        xlink_occu_vs_t(:, i_plot) = xlink_occupancy_tot; 
-        i_plot = i_plot + 1;
+        xlink_occupancy_tot = smoothdata(xlink_avg_occupancy_tot, 'movmean', smooth_window);          
+        altMAP_occupancy_tot = smoothdata(altMAP_avg_occupancy_tot, 'movmean', smooth_window); 
+        %xlink_occu_vs_t(:, i_plot) = xlink_occupancy_tot; 
+        %i_plot = i_plot + 1;
 
         
         % Reset arrays to zero before we start counting again 
         for i_pf = 1 : 1 : params.n_mts
             motor_avg_occupancy(:, i_pf) = 0;
             xlink_avg_occupancy(:, i_pf) = 0;
+            altMAP_avg_occupancy(:, i_pf) = 0;
         end
         motor_avg_occupancy_tot(:, 1) = 0;
         xlink_avg_occupancy_tot(:, 1) = 0;
+        altMAP_avg_occupancy_tot(:, 1) = 0;
         
         % GET ENDTAG LENGTH HERE
 
@@ -106,7 +119,9 @@ for i = 1:1:int32(params.n_datapoints)
         %}
         yyaxis left
         plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
-            xlink_occupancy_tot, 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
+            xlink_occupancy_tot, 'LineWidth', 2.5, 'Color', colors(1, :)); %, 'Color', colors(params.n_mts + 1, :));
+        plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
+            altMAP_occupancy_tot, 'LineWidth', 2.5, 'Color', colors(2, :)); %, 'Color', colors(params.n_mts + 1, :));
         %{
         for i_pf = 1 : 1 : params.n_mts
             plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
@@ -115,7 +130,7 @@ for i = 1:1:int32(params.n_datapoints)
         %}
         yyaxis right
         plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
-            motor_occupancy_tot, '--', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
+            motor_occupancy_tot, '--', 'LineWidth', 2.5, 'Color', colors(3, :)); %, 'Color', colors(params.n_mts + 1, :));
         %plot(linspace(0, params.max_sites * params.site_size, params.max_sites), ... 
         %    motor_occupancy_tot + xlink_occupancy_tot, '.', 'LineWidth', 2.5); %, 'Color', colors(params.n_mts + 1, :));
         %plot(linspace(0, n_sites*0.008, n_sites), net_occupancy);
