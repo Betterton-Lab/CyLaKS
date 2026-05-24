@@ -13,9 +13,8 @@ sim_name = 'output28/shep_1nM_100nM_8_1000_0.6kT_2.5x_3x_0';
 sim_name = 'output24/shep_1nM_100nM_8_1000_0.6kT_2x_1.5x_0';
 sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
 %sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_5e-5_0';
-sim_name = 'out_final_johann_altCeff/shep_0.504nM_33.52nM_1_500_0.0kT_altCeff_0';
-%sim_name = 'out_final_johann_altCeff/shep_0.504nM_0.3352nM_1_500_0.0kT_altCeff_0';
-%sim_name = 'out_final_johann_long/shep_0.504nM_0.3352nM_1_500_0.0kT_0';
+sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_1xCeff_0';
+%sim_name = 'out_final_johann/shep_johann_simpleMotors';
 
 output_movie_name = 'out_johann_test'
 
