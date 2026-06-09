@@ -2,6 +2,7 @@ clear variables;
 
 sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_0.01xCeff_0';
 sim_name = 'out_final_johann/shep_johann_simpleMotors';
+sim_name = 'shep_johannModel';
 
 size_x = 500;
 size_y = 400;

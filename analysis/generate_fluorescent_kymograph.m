@@ -4,12 +4,12 @@ clear variables;
 %file_dir = "../";%out_final_xlinkOnlyLong";
 %sim_name = 'out_final_motorVelWeighted2/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_1x_1x'
 %output_folder = 'kymo_output_motorVelocityWeighted2';
-output_folder = 'kymo_output_noCoop';
+output_folder = 'kymo_output_PRC1wCoop'; %'kymo_output_PRC1noCoop'
 subfilaments = true; 
 
 %
 %file_dir = '../out_final_motorVelWeighted2';
-file_dir = '../out_final_noCoop';
+file_dir = '../out_final'; %'../out_final_noCoop';
 %output_folder = '.';
 %name_format = 'shep_%gnM_%gnM_8_%i_0.6kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_%gnM_8_%i_0.6kT_3x_5x_%i_motor_%gx';
@@ -19,7 +19,7 @@ file_dir = '../out_final_noCoop';
 %name_format = 'shep_0.1nM_50nM_%i_1000_1.2kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_%gx_%gx';
 %name_format = 'shep_%gnM_%inM_8_1000_0.0kT_3x_5x';
-sim_name = 'shep_0.1nM_10nM_8_1000_0.0kT_3x_5x_0';
+sim_name = 'shep_0.1nM_100nM_8_1000_0.6kT_3x_5x_0';
 
 %{
 %vars_one = [0.1, 1];
@@ -64,8 +64,8 @@ frac_visible_xlink = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 frac_visible_motor = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 
 tubulin_intensity = 0.0; % 0.01;
-xlink_intensity = 0.003; %0.05;  % Controls how bright a single xlink is; 0.003 for 0.1 nM
-motor_intensity = 0.0008; %0.0015;  % ditto but for motors; 0.0008 for 100 nM
+xlink_intensity = 0.003; %0.05;  % Controls how bright a single xlink is; 0.003 for 0.1 nM; 0.00075 for 1 nM
+motor_intensity = 0.0008; %0.0015;  % ditto but for motors; 0.0008 for ALL ?! 0.0024 for 10 nM, 0.0008 for 100 nM 
 
 % Scale bar lengths 
 scale_x = 2; %5; %2.5; %1; % microns
