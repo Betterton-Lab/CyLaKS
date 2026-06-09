@@ -14,7 +14,7 @@ sim_name = 'output24/shep_1nM_100nM_8_1000_0.6kT_2x_1.5x_0';
 sim_name = 'out_final/shep_1nM_100nM_8_1000_0.6kT_3x_5x_0';
 sim_name = 'out_final_johann/shep_0.504nM_33.52nM_1_500_0.0kT_0.01xCeff_0';
 %sim_name = 'out_final_johann/shep_johann_simpleMotors';
-sim_name = 'test';
+sim_name = 'shep_johannModel';
 
 output_movie_name = 'out_johann_test'
 
@@ -22,7 +22,7 @@ size_x = 600;
 size_y = 400;
 
 start_frame = 1;
-frames_per_plot = 1; %000; % in n_datapoints; number of timesteps per output plot
+frames_per_plot = 1000; % in n_datapoints; number of timesteps per output plot
 end_frame = 6000;  % set to -1 to run until end of data
 movie_duration = 30; % in seconds
 
