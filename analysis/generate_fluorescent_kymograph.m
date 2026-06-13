@@ -5,13 +5,13 @@ clear variables;
 %sim_name = 'out_final_motorVelWeighted2/shep_0.1nM_10nM_8_1000_0.6kT_3x_5x_0_motorVelWeighted_1x_1x'
 %output_folder = 'kymo_output_motorVelocityWeighted2';
 %output_folder = 'kymo_output_noCoop';
-output_folder = 'kymo_output_altMAPs_round1';
+output_folder = 'kymo_output_altMAPs';
 subfilaments = true; 
 
 %
 %file_dir = '../out_final_motorVelWeighted2';
 %file_dir = '../out_final_noCoop';
-file_dir = '../out_altMAPs_round1/';
+file_dir = '../out_final_altMAPs/';
 %output_folder = '.';
 %name_format = 'shep_%gnM_%gnM_8_%i_0.6kT_3x_5x_%i';
 %name_format = 'shep_0.1nM_%gnM_8_%i_0.6kT_3x_5x_%i_motor_%gx';
@@ -23,7 +23,7 @@ file_dir = '../out_altMAPs_round1/';
 %name_format = 'shep_%gnM_%inM_8_1000_0.0kT_3x_5x';
 %sim_name = 'shep_0.1nM_10nM_8_1000_0.0kT_3x_5x_0';
 %sim_name = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_0.3_0.3_0'
-name_format = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_%g_%g_0';
+name_format = 'shep_1nM_100nM_8_1000_0.6kT_altMAPs_%g_%g_0';
 
 
 %vars_one = [0.1, 1];
@@ -35,8 +35,8 @@ name_format = 'shep_0.1nM_100nM_8_1000_0.6kT_altMAPs_%g_%g_0';
 %vars_two = [30]
 %vars_two = [1000];
 %vars_one = [0.1, 0.3, 1, 3, 10]; %vars_one = [1];
-vars_one = [0.3, 1, 3];
-vars_two = [0.3, 1, 3];
+vars_one = [0.1, 0.3, 1, 3, 10];
+vars_two = [0.1, 0.3, 1, 3, 10];
 %vars_two = [0.1, 0.3, 1, 3, 10];
 %vars_two = [0.1, 0.3, 1, 3, 10, 30]; %vars_two = [1];
 seeds = [0];%, 1, 2, 3, 4, 5]; 
@@ -71,7 +71,7 @@ frac_visible_motor = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 frac_visible_altMAP = [1, 1]; % [numerator, denominator]; [1,1] for all visibile
 
 tubulin_intensity = 0.0; % 0.01;
-xlink_intensity = 0.003; %0.05;  % Controls how bright a single xlink is; 0.003 for 0.1 nM
+xlink_intensity = 0.0005; %0.05;  % Controls how bright a single xlink is; 0.003 for 0.1 nM
 motor_intensity = 0.0008; %0.0015;  % ditto but for motors; 0.0008 for 100 nM
 altMAP_intensity = xlink_intensity;
 
