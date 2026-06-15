@@ -64,8 +64,10 @@ On most Linux distributions, you can install these dependences as follows:
 sudo apt-get install libgsl-dev
 sudo apt-get install libyaml-cpp-dev
 ```
-In order to use most of the included bash scripts found in `scripts/`, [yq](https://github.com/mikefarah/yq) is also required. There are a variety of ways to install this utility, so consult the documentation to find the most convenient means for your local environment. 
-
+In order to use most of the included bash scripts found in `scripts/`, [yq](https://github.com/mikefarah/yq) is also required. There are a variety of ways to install this utility, so consult the documentation to find the most convenient means for your local environment. On most Linux distributions, you can use snap:
+```
+sudo snap install yq
+```
 To use the provided installation script, you must have CMake (version 3.13+) installed. On most Linux distributions, CMake can be installed via:
 ```
 sudo apt-get install cmake
@@ -153,7 +155,12 @@ or
 ./cylaks.exe [params] [sim-name] filament_forced_slide [n_xlinks] [slide_vel] [mode] [t_pause] [pause_dur]
 ```
 where `n_xlinks` is the number of doubly bound crosslinkers to insert at the beginning of the simulation, `slide_vel` is the imposed velocity of the microtubule(s) in nm/s, and 'mode' selects between the two different imposed force types. Setting `mode = 0` selects the kinesin gliding mode, and the input velocity will be the constant gliding velocity _in the absence of any other force_ (i.e, crosslinkers can slow them down).  Setting `mode = 1` selects the optical trapping mode, and the input velocity will be the constant velocity at which one microtubule is dragged. The two optional inputs `t_pause` and `pause_dir` (in seconds) allow for a temporary pause in force application (usually used in force mode 1) to see how the system responds after being allowed to mechanically reorganize after induced sliding.
+### Shepherding
+To run a basic shepherding simulation, use the `params/shepherding.yaml` parameter file. This uses a strong shepherding condition of 0.1 nM MAPs + 100 nM motors, and simulates a 120-second-long run by default. To change shepherding conditions, edit the `c_bulk` values under the `motors` or `xlinks` entries in the yaml file. To change duration of the simulation, edit the `t_run` parameter. Full descriptions of all parameters appear in the next section below. Once the simulation finishes, a movie can be generated via the `analysis/movie.m` script. 
 
+To recreate the figure panels from the _Farhadi & Fiorenza et al._, utilize the appropriately labeled scripts under the `scripts_simulation` directory. These will launch concurrent instances of simulations with the different parameter values used to explore shepherding behavior in our publication. The phase diagrams and simulated kymographs in each figure can then be exactly recreated by using the `analysis/shep_phase_displacement.m` and `analysis/generate_fluorescent_kymograph.m` scripts, respectively. 
+
+For the sake of minimizing simulation run times, a timestep of `5 x 10^-5` is used in the default shepherding parameter file. This results in relatively large event probabilities which may reduce the accuracy of simulations. To enhance accuracy and match what was used in publication, reduce the timestep to `5 x 10^-6`. However, note that this can result in simulations taking a few days to complete.  
 ### Parameters
 #### General
 ```
